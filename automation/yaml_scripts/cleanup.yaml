@@ -1,0 +1,40 @@
+#cat << EOF > ${WORKSPACE}/cleanup.yaml
+---
+- hosts: "orchids"
+
+  remote_user: orchid
+
+  gather_facts: true
+
+  vars:
+    jenkins_dir: /jenkins
+    vpn_script_dir: /home/orchid/vpn_scripts
+    repos_dir: /home/orchid/repos
+    
+  tasks:  
+
+  - name: "Clean artifact path {{ jenkins_dir }}"
+    file:
+      state: absent
+      path: "{{ jenkins_dir }}"
+    become: true
+    
+  - name: "Clean artifact path {{ vpn_script_dir }}"
+    file:
+      state: absent
+      path: "{{ vpn_script_dir }}"
+    become: true
+    
+  - name: "Clean artifact path {{ repos_dir }}"
+    file:
+      state: absent
+      path: "{{ repos_dir }}"
+    become: true    
+
+  - name: Unconditionally reboot the machine with all defaults
+    reboot:
+    become: true
+
+
+
+#EOF

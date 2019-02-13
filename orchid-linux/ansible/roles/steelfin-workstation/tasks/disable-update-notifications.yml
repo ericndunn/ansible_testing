@@ -1,0 +1,13 @@
+- name: Disable APT update notifications
+  replace:
+    path: /etc/apt/apt.conf.d/99update-notifier
+    regexp: '^([^#].*)'
+    replace: '#\1'
+    backup: yes
+  become: true
+
+- name: Remove update-notifier package
+  apt:
+    name: update-notifier
+    state: absent
+  become: true

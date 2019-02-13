@@ -1,0 +1,59 @@
+- name: Extract Chrome preferences
+  unarchive:
+    src: google-chrome-prefs.tar.gz
+    dest: "/home/{{ steelfin_user_account }}/.config/"
+  become: true
+  become_user: "{{ steelfin_user_account }}"
+
+- name: Identify Chrome cache files
+  find:
+    paths: "/home/{{ steelfin_user_account }}/.config/google-chrome/Default/"
+    patterns: "History*,Login*,Archived*,Cookies*,Current*,Last*,Top*,Visited*"
+  register: cache_files
+
+- name: Remove Chrome cache files
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ cache_files.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+  become: true
+  become_user: "{{ steelfin_user_account }}"
+
+- block:
+    - name: Remove Chrome cache folder
+      file: 
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ cache_folders }}"
+
+    - name: Create (empty) Chrome cache folder
+      file: 
+        path: "{{ item }}"
+        state: directory
+      loop: "{{ cache_folders }}"
+
+  vars:
+    cache_folders:
+      - "/home/{{ steelfin_user_account }}/.cache/google-chrome/"
+      - "/home/{{ steelfin_user_account }}/.config/google-chrome/Default/Local Storage/"
+      - "/home/{{ steelfin_user_account }}/.config/google-chrome/Default/Application Cache"
+  become: true
+  become_user: "{{ steelfin_user_account }}"
+
+- name: Create autostart directory
+  file:
+    path: "/home/{{ steelfin_user_account }}/.config/autostart"
+    state: directory
+  become: true
+  become_user: "{{ steelfin_user_account }}"
+
+- name: Auto-start Chrome on login
+  file:
+    src: /usr/share/applications/google-chrome.desktop
+    dest: "/home/{{ steelfin_user_account }}/.config/autostart/google-chrome.desktop"
+    state: link
+  become: true
+  become_user: "{{ steelfin_user_account }}"
+

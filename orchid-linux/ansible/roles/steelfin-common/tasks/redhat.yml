@@ -1,0 +1,61 @@
+- name: Update yum and upgrade all
+  yum:
+    update_cache: yes
+    update_only: yes
+    state: latest
+  become: true
+
+- name: Install EPEL
+  yum:
+    name: epel-release
+    state: present
+  become: true
+
+- name: Install Nux Dextop
+  yum:
+    name: https://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm
+    state: present
+  become: true
+
+- name: Install Orchid/SteelFin packages (Red Hat)
+  yum:
+    name: "{{ packages }}"
+    state: latest
+    update_cache: yes
+  vars:
+    packages:
+      - tbb
+      - postgresql-libs
+      - vlc
+      - expect
+      - jq
+      - mdadm
+      - lsb
+      - vim
+      - curl
+      - libXScrnSaver.x86_64
+      - hdparm
+      - htop
+      - iftop
+      - iotop
+      - yum-plugin-versionlock
+      - x11vnc
+      - rlwrap
+      - ntp
+  become: true
+
+- name: Find ifcfg files
+  find:
+    paths: /etc/sysconfig/network-scripts/
+    patterns: 'ifcfg-*'
+  register: ifcfg_scripts
+
+- name: Start all network interfaces on boot
+  lineinfile:
+    path: "{{ item.path }}"
+    regexp: '^ONBOOT='
+    line: 'ONBOOT="yes"'  
+  loop: "{{ ifcfg_scripts.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+  become: true

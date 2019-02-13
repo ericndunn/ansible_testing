@@ -1,0 +1,17 @@
+- name: Create .ssh directory for primary user
+  file:
+    path: "/home/{{ mcdonalds_primary_user }}/.ssh"
+    state: directory
+    mode: 0700
+    owner: "{{ mcdonalds_primary_user }}"
+    group: "{{ mcdonalds_primary_user }}"
+  become: true
+
+- name: Set SSH authorized key for primary user
+  lineinfile:
+    path: "/home/{{ mcdonalds_primary_user }}/.ssh/authorized_keys"
+    line: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDqFVq4kfriZSFeBcS/Y4g4rLGwSvAk4BZy8C76l8gVN7tLZc4UxDWLWiBILUwd+TNYyJ3l4MjDSUvF6hahfmNTT4Osn+YqMeUfzHBx/b7XtaNYQeey9ZkeD7mEy/+HqyyDzaQa0FoerdAQR6KklPh47LzvjLySVG0ahtOuOuzNPMOsZWPrWmsynnrEEd13GRBIYfvignHCiUWkxlDA9j19VtslBMeKQXN1o5S/r1cBF4aw5XF8W0+zBEfBQoHcbt6waBKIrjaHS6vDjnGuQfcKVDxkEHZQqJDJr3v/OGyFQu8HuOUKj4Hbpz8k1/yhL7FzvK1mbetbYrN4EDRw0iyv cort@cort-ubuntu"
+    owner: "{{ mcdonalds_primary_user }}"
+    group: "{{ mcdonalds_primary_user }}"
+    create: yes
+  become: true

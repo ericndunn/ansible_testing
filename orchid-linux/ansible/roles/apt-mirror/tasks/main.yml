@@ -1,0 +1,9 @@
+- block:
+    - name: Update /etc/apt/sources.list
+      replace:
+        path: /etc/apt/sources.list
+        regexp: 'http://[0-9a-zA-Z.:-]+/'
+        replace: "http://{{ apt_mirror }}/"
+        backup: yes
+      become: true
+  when: ansible_os_family == 'Debian'

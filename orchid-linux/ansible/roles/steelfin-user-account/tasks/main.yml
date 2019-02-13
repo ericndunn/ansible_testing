@@ -1,0 +1,131 @@
+- name: Set Teamviewer favorites link
+  set_fact:
+    teamviewer_unity_link: "'application://teamviewer.desktop', "
+    teamviewer_gnome_link: "'teamviewer.desktop', "
+  when: steelfin_teamviewer == true
+
+- name: Set sudoers group (Red Hat)
+  set_fact:
+    steelfin_sudoers_group: 'wheel'
+  when: ansible_os_family == "RedHat"
+
+- name: Clear sudoers group if this user should not be sudo
+  set_fact:
+    steelfin_sudoers_group: ''
+  when: steelfin_user_sudo != true
+
+- name: Create SteelFin user account
+  user:
+    name: "{{ steelfin_user_account }}"
+    groups: "{{ steelfin_sudoers_group }}"
+    append: yes
+    shell: "/bin/bash"
+    password: "{{ steelfin_user_password }}"
+  become: true
+
+- name: Create SteelFin hidden directory
+  file:
+    path: "/home/{{ steelfin_user_account}}/.steelfin"
+    state: directory
+  become: true
+  become_user: "{{ steelfin_user_account }}"
+
+- name: Create default applications directory
+  file:
+    path: "/home/{{ steelfin_user_account}}/.local/share/applications"
+    state: directory
+  become: true
+  become_user: "{{ steelfin_user_account }}"
+
+- name: Copy desktop background
+  copy:
+    src: orchid_background.jpg
+    dest: "/home/{{ steelfin_user_account}}/.steelfin/orchid_background.jpg"
+  become: true
+  become_user: "{{ steelfin_user_account }}"
+  
+- name: Copy default applications file
+  template: 
+    src: mimeapps.list.j2
+    dest: "/home/{{ steelfin_user_account }}/.local/share/applications/mimeapps.list"
+  become: true
+  become_user: "{{ steelfin_user_account }}"
+  
+- name: Copy default .bashrc
+  copy: 
+    src: bashrc
+    dest: "/home/{{ steelfin_user_account }}/.bashrc"
+  become: true
+  become_user: "{{ steelfin_user_account }}"
+
+- name: Copy default .vimrc
+  copy: 
+    src: vimrc
+    dest: "/home/{{ steelfin_user_account }}/.vimrc"
+  become: true
+  become_user: "{{ steelfin_user_account }}"
+
+- name: Update Unity menu (Ubuntu 14/16)
+  import_tasks: unity-menu.yml
+  when: ansible_distribution == "Ubuntu" and ( ansible_distribution_version == "14.04" or ansible_distribution_version == "16.04" )
+
+- name: Configure GNOME settings
+  shell: |
+    dbus-launch gsettings set org.gnome.desktop.lockdown disable-lock-screen true
+    dbus-launch gsettings set org.gnome.desktop.notifications show-in-lock-screen false
+    dbus-launch gsettings set org.gnome.nautilus.desktop trash-icon-visible false
+    dbus-launch gsettings set org.gnome.nautilus.desktop home-icon-visible false
+    dbus-launch gsettings set org.gnome.nautilus.desktop volumes-visible false
+    dbus-launch gsettings set org.gnome.shell favorite-apps "['google-chrome.desktop', 'firefox-esr.desktop', 'org.gnome.Nautilus.desktop', {{ teamviewer_gnome_link }}'vlc.desktop']"
+    dbus-launch gsettings set org.gnome.desktop.wm.preferences num-workspaces 1
+    dbus-launch gsettings set org.gnome.desktop.background show-desktop-icons true
+    dbus-launch gsettings set org.gnome.desktop.screensaver idle-activation-enabled false
+    dbus-launch gsettings set org.gnome.desktop.session idle-delay 0
+    dbus-launch gsettings set org.gnome.desktop.screensaver lock-enabled false
+    dbus-launch gsettings set org.gnome.desktop.background picture-options stretched
+    dbus-launch gsettings set org.gnome.desktop.screensaver picture-uri "file:///home/{{ steelfin_user_account }}/.steelfin/orchid_background.jpg" 
+    dbus-launch gsettings set org.gnome.desktop.background picture-uri "file:///home/{{ steelfin_user_account }}/.steelfin/orchid_background.jpg" 
+  become: true
+  become_user: "{{ steelfin_user_account }}"
+
+- name: Configure GNOME settings (Ubuntu-specific)
+  shell: |
+    dbus-launch gsettings set org.gnome.settings-daemon.plugins.background active true
+    dbus-launch gsettings set org.gnome.desktop.background draw-background true
+  become: true
+  become_user: "{{ steelfin_user_account }}"
+  when: ansible_distribution == "Ubuntu"
+
+- name: Change RedHat GNOME settings
+  import_tasks: redhat-dock.yml
+  when: ansible_os_family == "RedHat"
+
+- name: Configure Google Chrome settings
+  import_tasks: chrome-settings.yml
+
+- name: Configure Firefox ESR settings
+  import_tasks: firefox-esr-settings.yml
+  when: ansible_os_family != "RedHat"
+
+- name: Create Desktop directory
+  file:
+    path: "/home/{{ steelfin_user_account}}/Desktop"
+    state: directory
+  become: true
+  become_user: "{{ steelfin_user_account }}"
+
+- name: Copy Guides to users's desktop
+  copy:
+    src: "{{ item }}"
+    dest: "/home/{{ steelfin_user_account}}/Desktop/{{ item }}"
+    mode: 0444
+  loop:
+    - "Orchid Core VMS User Guide.pdf"
+    - "Orchid Core VMS Administrator Guide.pdf"
+    - "Orchid Core VMS Quick Start Key.pdf"
+  become: true
+  become_user: "{{ steelfin_user_account }}"
+
+- name: Set up Teamviewer
+  import_tasks: teamviewer.yml
+  when: steelfin_teamviewer == true

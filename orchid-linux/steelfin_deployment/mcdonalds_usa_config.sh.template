@@ -1,0 +1,88 @@
+#!/bin/bash
+
+serial="@SERIAL@"
+activation_code="@ACTIVATION_CODE@"
+customer_id="@CUSTOMER_ID@"
+
+# Get activate_orchid script
+# Get McDonald's IP script
+# Get SteelFin setup script
+# Get VPN script
+
+if [[ $USER != "orchid" ]]; then
+    echo "ERROR: You need to run this as the orchid user."
+    echo
+    exit 1
+fi
+
+activate_vpn() {
+    vpn_script_path="http://download.ipconfigure.com/misc/${customer_id}/${serial}"
+    vpn_script_file="deploy-ubuntu-${customer_id}-${serial}.sh"
+
+    # Fix APT sources
+    sudo sed -i 's/#.*deb/#deb/' /etc/apt/sources.list
+
+    wget ${vpn_script_path}/${vpn_script_file}
+    chmod 755 ${vpn_script_file}
+    sudo killall -9 chrome
+    sudo ./${vpn_script_file}
+}
+
+activate_orchid() {
+    activate_path="http://download.ipconfigure.com/misc/"
+    activate_file="activate_orchid.sh"
+
+    web_protocol=$( cat /etc/opt/orchid_server.properties \
+                    | grep '^webserver.protocol' \
+                    | sed 's/\s*//g' \
+                    | cut -d '=' -f 2 )
+    web_port=$( cat /etc/opt/orchid_server.properties \
+                | grep '^webserver.port' \
+                | sed 's/\s*//g' \
+                | cut -d '=' -f 2 )
+
+    user="admin"
+    pass="0rc#1d"
+    location="${customer_id} ${serial} automated activation"
+
+    wget ${activate_path}/${activate_file}
+    chmod 755 ${activate_file}
+    ./${activate_file} \
+        "$activation_code" \
+        "$location" \
+        "admin" \
+        "0rc#1d" \
+        "${web_protocol}://localhost:${web_port}"
+}
+
+reset_orchid() {
+    sudo sed -i '/^orchid.uuid/d' /etc/opt/orchid_server.properties
+    sudo sed -i '/^orchid.admin.password/d' /etc/opt/orchid_server.properties
+    sudo bash -c 'echo "orchid.admin.password = 0rc#1d" >> /etc/opt/orchid_server.properties'
+    sudo service orchid restart
+}
+
+setup_raid() {
+    setup_path="http://download.ipconfigure.com/misc/"
+    setup_file="setup_steelfin_machine.sh"
+    common_file="steelfin_common.sh"
+
+    wget ${setup_path}/${setup_file}
+    wget ${setup_path}/${common_file}
+    chmod 755 ${setup_file}
+    chmod 755 ${common_file}
+    export IPC_CONFIG_SCRIPT_RAID_ONLY=1
+    sudo -E ./${setup_file} ${serial} RAID5
+}
+
+pushd .
+mkdir -p script-temp
+cd script-temp
+
+setup_raid
+reset_orchid
+activate_orchid
+activate_vpn
+
+popd
+rm -rf script-temp

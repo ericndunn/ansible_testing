@@ -1,0 +1,55 @@
+---
+- hosts: "targetserver"
+#- hosts: "{{ lookup('env', 'NODE_NAME') }}"
+
+## Get contents of public key
+  vars:
+    pubkey: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+
+  tasks:
+
+  # - debug: msg="The value of id_rsa.pub is {{ pubkey }}"
+  
+  # - name: Print out the public key
+  #   vars:
+  #     msg: |
+  #          The value of id_rsa.pub is:
+  #          {{ pubkey }}
+  #   debug:
+  #     msg: "{{ msg.split('\n') }}"           
+
+## Reset known_hosts in case it holds same hostname
+  # - name: Reset known_hosts in case it holds same hostname in .ssh/known_hosts.
+  #   local_action: command ssh-keygen -f "~/.ssh/known_hosts" -R {{ ansible_default_ipv4.address }}
+  #   tags:
+  #     - default
+
+## Delete known_hosts 
+  - name: Delete /home/orchid/.ssh/known_hosts
+    local_action: command rm -f "/home/orchid/.ssh/known_hosts"
+    tags:
+      - default            
+
+## Make .ssh dir on target server
+  - name: Make .ssh dir on target server
+    file:
+      path: "/home/orchid/.ssh"
+      state: directory
+    tags:
+      - default      
+
+## Create the empty authorized_keys file
+  - name: Create the empty authorized_keys file
+    file:
+      path: "/home/orchid/.ssh/authorized_keys"
+      state: touch
+    tags:
+      - default      
+
+## Put contents of public key in target server authorized_keys file
+  - name: Put contents of public key in target server authorized_keys file
+    lineinfile:
+      path: "/home/orchid/.ssh/authorized_keys"
+      line: "{{ pubkey }}"
+    tags:
+      - default      

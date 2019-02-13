@@ -1,0 +1,96 @@
+---
+
+- name: Run the playbook tasks on the localhost
+  hosts: localhost
+  become: yes
+  gather_facts: true
+  vars:
+      jenkinsworkspace: "{{lookup('env', 'WORKSPACE')}}"
+      which_os: "{{lookup('env', 'WHICH_OS')}}"
+  tasks:
+
+  - name: Obtaining a list of Node IPs
+    jenkins_script:
+      script: |
+        import hudson.model.Computer.ListPossibleNames
+        slaves = Hudson.instance.slaves.findAll { it.getLabelString().split() contains 'swarm' }
+        slaves.each {
+          println it.getChannel().call(new ListPossibleNames())
+        }
+      user: jenkins
+      password: "{{ lookup('env', 'JENKINS_PW') }}"
+      url: https://orchid.ipconfigure.com:8443
+      validate_certs: no
+    register: nodeiplist       
+
+  - name: "PRINT OUT | Obtaining a list of Node IPs"
+    debug:
+      msg: "{{ nodeiplist.output.split('\n') }}" 
+
+  - name: Delete output file 
+    file:
+      state: absent
+      path: "{{ jenkinsworkspace }}/list_of_host_ip"
+
+  - name: Make output file
+    file: name="{{ jenkinsworkspace }}/list_of_host_ip" state=touch
+
+  - name: Record IP in output file
+    lineinfile: dest="{{ jenkinsworkspace }}/list_of_host_ip" line="{{ item }}"
+    with_items:
+      "{{ nodeiplist.output.split('\n') }}"      
+
+  - name: Remove line that begins with the word "Result:"
+    lineinfile:
+      path: "{{ jenkinsworkspace }}/list_of_host_ip"
+      state: absent
+      regexp: 
+        - '^Result:'
+
+  - name: "Replace/remove first char at BOL in hosts file" 
+    replace:
+      path: "{{ jenkinsworkspace }}/list_of_host_ip"
+      regexp: '^.{1}(.*)$'
+      replace: '\1'
+      backup: yes
+    when: which_os == "UBUNTU"
+
+# # You can use shell to run other executables to perform actions inline
+#   - name: "Write test file for CENTOS"
+#     shell: |
+#       cat << EOF > "{{ jenkinsworkspace }}/TEST_list_of_host_ip"
+# [192.168.122.1, 192.168.102.81]
+#     args:
+#       executable: /bin/bash
+#     delegate_to: localhost
+#     when: which_os == "CENTOS"                       
+
+  # - name: "Replace/remove bracket at BOL [192 with 192 xx" 
+  #   replace:
+  #     path: "{{ jenkinsworkspace }}/list_of_host_ip"
+  #     regexp: '^\[192'
+  #     replace: '192'
+  #     backup: yes
+  #   when: which_os == "UBUNTU"
+
+  - name: "Replace/remove bracket at BOL [192 with 192" 
+    replace:
+      path: "{{ jenkinsworkspace }}/list_of_host_ip"
+      regexp: '^.{1,16}(.*)$'
+      replace: '\1'
+      backup: yes
+    when: which_os == "CENTOS"                            
+
+  - name: "Replace/remove ] with EOL"
+    replace:
+      path: "{{ jenkinsworkspace }}/list_of_host_ip"
+      regexp: '\]$'
+      replace: ''
+      backup: yes                 
+
+  - name: Insert line at BOF
+    lineinfile:
+      path: "{{ jenkinsworkspace }}/list_of_host_ip"
+      line: '[targetserver]'
+      insertbefore: BOF                               
+       

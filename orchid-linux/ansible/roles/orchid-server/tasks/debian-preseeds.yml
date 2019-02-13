@@ -1,0 +1,51 @@
+- block:
+  - name: Pre-seed postfix notification
+    debconf:
+      name: postfix
+      question: postfix/main_mailer_type
+      value: 'No configuration'
+      vtype: string
+  
+  - name: Pre-seed Orchid EULA acceptance
+    debconf:
+      name: ipc-orchid
+      question: ipc-orchid/accept_eula
+      value: 'true'
+      vtype: boolean
+  
+  - name: Pre-seed Orchid EULA v2 acceptance
+    debconf:
+      name: ipc-orchid
+      question: ipc-orchid/accept_eula2
+      value: 'true'
+      vtype: boolean
+  
+  - name: Pre-seed Orchid admin password
+    debconf:
+      name: ipc-orchid
+      question: ipc-orchid/admin_password
+      value: "{{ orchid_installer_options['password'] }}"
+      vtype: string
+  
+  - name: Pre-seed Orchid webserver port
+    debconf:
+      name: ipc-orchid
+      question: ipc-orchid/webserver_port
+      value: "{{ orchid_installer_options['webserver_port'] }}"
+      vtype: string
+  
+  - name: Pre-seed Orchid orchives dir
+    debconf:
+      name: ipc-orchid
+      question: ipc-orchid/orchives_dir
+      value: "{{ orchid_installer_options['orchives_dir'] }}"
+      vtype: string
+  
+  - name: Pre-seed Orchid ONVIF AutoD address
+    debconf:
+      name: ipc-orchid
+      question: ipc-orchid/autodiscovery_ip_address
+      value: '127.0.0.1'
+      vtype: string
+  when: ansible_os_family == "Debian"
+  become: true

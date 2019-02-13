@@ -1,0 +1,7 @@
+- name: Ubuntu/Debian SteelFin Common Prerequisites
+  import_tasks: debian.yml
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Red Hat SteelFin Common Prerequisites
+  import_tasks: redhat.yml
+  when: ansible_facts['os_family'] == 'RedHat'

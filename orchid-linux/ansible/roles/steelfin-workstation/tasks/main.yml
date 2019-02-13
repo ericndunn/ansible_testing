@@ -1,0 +1,19 @@
+# Configure as a GUI workstation
+- name: Gather package facts
+  package_facts:
+  when: ansible_facts.packages is not defined
+
+- name: Disable anonymous lightdm guest login
+  include_tasks: lightdm-no-guests.yml
+  when: ansible_facts.packages.lightdm is defined
+
+- name: Disable apport (Ubuntu)
+  import_tasks: apport.yml
+  when: ansible_distribution == "Ubuntu" and ansible_facts.packages.apport is defined
+
+- name: Disable update notifications (Ubuntu)
+  include_tasks: disable-update-notifications.yml
+  when: ansible_distribution == "Ubuntu"
+
+- name: Brand login screen/greeter
+  include_tasks: greeter-branding.yml

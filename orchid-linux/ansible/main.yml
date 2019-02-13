@@ -1,0 +1,27 @@
+---
+- hosts: orchids
+  roles:
+    - role: apt-mirror
+      vars:
+        apt_mirror: "192.168.100.205"
+    - steelfin-common
+    - role: raid
+      vars: 
+        steelfin_raid_level: 1
+    - orchid-server
+    - orchid-viewer
+    - steelfin-workstation
+    - role: steelfin-user-account
+      vars:
+        steelfin_user_account: 'orchid'
+        steelfin_user_password: '$6$dllZfu9nPtHbVH8$LRaeMFVlIym6MD8ytUtVAVKITAsjXGmX5Gxrqw0Fh/zv.RYN2Z592vN8DvfDFBcZRzUx/YkqfUg7Wx7U24Jjj0'
+        steelfin_user_sudo: true
+        steelfin_teamviewer: true
+#    - customers/mcdonalds-usa
+    - { role: customers/mcdonalds-usa, when: job_name == 'mcdonalds' }
+    - role: apt-mirror
+      vars:
+        apt_mirror: "us.archive.ubuntu.com"
+#  tasks:
+#    - reboot:
+#      become: true

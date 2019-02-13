@@ -1,0 +1,4 @@
+IPConfigure PXE Help File
+----------------------
+
+Simple: If you don't know what this menu is, ignore it and restart the PC!

@@ -1,0 +1,53 @@
+- name: Determine mdadm.conf location (Debian)
+  set_fact:
+    mdadm_location: "/etc/mdadm/mdadm.conf"
+  when: ansible_os_family == "Debian" and mdadm_location is not defined
+
+- name: Determine mdadm.conf location (Red Hat)
+  set_fact:
+    mdadm_location: "/etc/mdadm.conf"
+  when: ansible_os_family == "RedHat" and mdadm_location is not defined
+
+- name: Checking if software RAID device exists
+  stat:
+    path: "{{ steelfin_raid_device }}"
+  register: md_stat_result
+
+- block:
+    - name: Copy orchid_raid_monitor.sh
+      copy:
+        src: orchid_raid_monitor.sh
+        dest: /usr/local/bin/orchid_raid_monitor.sh
+        mode: 0755
+
+    # TODO: ansible templates?
+    - name: Set RAID device to monitor
+      replace:
+        path: /usr/local/bin/orchid_raid_monitor.sh
+        regexp: "%RAID_DEVICE%"
+        replace: "{{ steelfin_raid_device }}"
+
+    - name: Remove existing monitoring directives from mdadm configuration
+      lineinfile:
+        path: "{{ mdadm_location }}"
+        state: absent
+        regexp: "^(MAILADDR|MAILFROM|PROGRAM).*"
+ 
+    - name: Configure mdadm to run RAID monitor script
+      lineinfile:
+        path: "{{ mdadm_location }}"
+        regexp: "^PROGRAM"
+        line: "PROGRAM /usr/local/bin/orchid_raid_monitor.sh"
+
+    - name: Create minutely cronjob to monitor the RAID
+      cron:
+        name: "Orchid RAID Monitor"
+        job: "/sbin/mdadm --monitor --scan --oneshot"
+
+    - name: Set RAID rebuild speed
+      sysctl:
+        name: dev.raid.speed_limit_max
+        value: 50000
+
+  when: md_stat_result.stat.isblk is defined and md_stat_result.stat.isblk
+  become: true

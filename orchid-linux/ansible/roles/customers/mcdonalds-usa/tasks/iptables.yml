@@ -1,0 +1,28 @@
+- name: Accept NTP traffic from 192.168.2.*
+  iptables:
+    chain: INPUT
+    source: 192.168.2.0/24
+    protocol: udp
+    match: udp
+    destination_port: 123
+    jump: ACCEPT
+  become: true
+
+- name: Accept NTP traffic from localhost
+  iptables:
+    chain: INPUT 
+    source: 127.0.0.1
+    protocol: udp
+    match: udp
+    destination_port: 123
+    jump: ACCEPT
+  become: true
+
+- name: Block all other NTP traffic
+  iptables:
+    chain: INPUT 
+    protocol: udp
+    match: udp
+    destination_port: 123
+    jump: DROP
+  become: true

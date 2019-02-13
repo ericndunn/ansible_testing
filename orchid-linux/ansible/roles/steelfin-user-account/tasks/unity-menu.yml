@@ -1,0 +1,5 @@
+- name: Set Unity menu
+  shell: "dbus-launch gsettings set com.canonical.Unity.Launcher favorites \"['application://google-chrome.desktop', 'application://firefox-esr.desktop', 'application://nautilus.desktop', 'application://vlc.desktop', {{ teamviewer_unity_link }}'unity://running-apps', 'unity://expo-icon', 'unity://devices']\""
+  become: true
+  become_user: "{{ steelfin_user_account }}"
+  

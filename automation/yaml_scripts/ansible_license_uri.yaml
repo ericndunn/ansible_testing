@@ -1,0 +1,96 @@
+#cat > ${WORKSPACE}/ansible_license_uri.yaml <<EOF
+---
+- hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    myip: "{{ ansible_host }}"
+    myurl: http://{{ ansible_host }}/service/discoverable/orchids
+    mypassword: "{{ lookup('env','ORCHIDPW') }}"
+    activation_url: https://www.orchidsecurity.com/activation/
+    target_connection: http://{{ ansible_host }}/service/license-session
+    activation_code: "{{ inventory_hostname }}"
+    location_description: "{{ lookup('env','LOCATION_DESCRIPTION') }}"
+    jenkins_workspace: "{{ lookup('env','WORKSPACE') }}"    
+  vars_files:
+    #- "{{ lookup('env','WORKSPACE') }}/automation/yaml_scripts/external_vars.yml"
+
+  tasks:   
+
+  - name: Retrieve Orchid MID
+    uri:
+      url: "{{ myurl }}"
+      force_basic_auth: yes
+      user: admin
+      password: "{{ mypassword }}"
+      timeout: 20
+    register: machineid
+    
+  - name: DEBUG Retrieve Orchid MID
+    debug:
+      msg: "{{ machineid.json.orchids[0].mid }}"
+
+  - copy:
+      content: "{{ machineid.json.orchids[0].mid }}"
+      dest: "{{ jenkins_workspace }}/{{ myip }}_machineid"      
+
+  - name: Post to retrieve Licence code  
+    uri:
+      url: "{{ activation_url }}"
+      method: POST
+      body: "activation_code={{ activation_code }}\
+      &machine_id={{ lookup('file','{{ jenkins_workspace }}/{{ myip }}_machineid') }}\
+      &location_description={{ location_description }}\
+      &headless=1"
+      return_content: yes
+      status_code: 200
+      headers:
+        Content-Type: "application/x-www-form-urlencoded"
+    register: lic_code  
+
+  - name: FAIL If the provided activation code has already been used
+    fail:
+      msg: "ERROR The provided activation code has already been used."
+    when: "'The provided activation code has already been used.' in lic_code.content"     
+
+  - name: DEBUG Post to retrieve Licence code
+    debug:
+      msg: "{{ lic_code.content }}"
+
+  - name: "Create file {{ jenkins_workspace }}/{{ myip }}_lic_code.content.json"
+    copy:
+      dest: "{{ jenkins_workspace }}/{{ myip }}_lic_code.content.json"
+      content: |
+        "{{ lic_code.content }}"
+
+  - name: Replace Remove unecessary characters
+    replace:
+      path: "{{ jenkins_workspace }}/{{ myip }}_lic_code.content.json"
+      regexp: '^"|"$'
+      replace: ''
+      backup: yes
+    register: rep_rem
+
+  - name: DEBUG Replace Remove unecessary characters
+    debug:
+      msg: "{{ rep_rem }}"    
+
+  - name: Activate Orchid license
+    uri:
+      url: "{{ target_connection }}"
+      method: POST
+      user: admin
+      password: "{{ mypassword }}"
+      body: "{{ lookup('file','{{ jenkins_workspace }}/{{ myip }}_lic_code.content.json') }}"
+      force_basic_auth: yes
+      status_code: 201
+      body_format: json 
+    register: act_orchid         
+
+  - name: DEBUG Activate Orchid license
+    debug:
+      msg: "{{ act_orchid }}"
+
+
+
+#EOF

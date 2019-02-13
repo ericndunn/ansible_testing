@@ -1,0 +1,48 @@
+##################################
+# COMMON UBUNTU/DEBIAN TASKS
+##################################
+- name: Update apt and upgrade all
+  apt:
+    upgrade: yes
+    update_cache: yes
+    cache_valid_time: 3600
+  become: true
+
+- name: Install common Orchid/SteelFin packages (Debian)
+  apt:
+    name: "{{ packages }}"
+    state: latest
+  vars:
+    packages:
+      - vlc
+      - expect
+      - gdebi
+      - ssh
+      - jq
+      - mdadm
+      - vim
+      - smartmontools
+      - zenity
+      - curl
+      - htop
+      - iftop
+      - iotop
+      - x11vnc
+      - rlwrap
+      - ntp
+  become: true
+
+############################
+# UBUNTU 16.04 TASKS
+############################
+- name: Install HWE kernel in Ubuntu 16.04
+  apt:
+    name: "{{ packages }}"
+    state: latest
+    install_recommends: yes
+  vars:
+    packages:
+      - linux-generic-hwe-16.04
+      - xserver-xorg-hwe-16.04
+  when: ansible_distribution == 'Ubuntu' and ansible_distribution_version == '16.04'
+  become: true

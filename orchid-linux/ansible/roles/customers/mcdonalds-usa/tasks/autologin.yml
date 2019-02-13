@@ -1,0 +1,103 @@
+- name: Gather package facts
+  package_facts:
+  when: ansible_facts.packages is not defined
+
+###################################
+# LIGHTDM AUTOLOGIN
+###################################
+- block:
+    - name: 'Verify [SeatDefaults] section in lightdm.conf'
+      lineinfile:
+        path: /etc/lightdm/lightdm.conf
+        line: '[SeatDefaults]'
+        create: yes
+
+    - name: Enable autologin in lightdm.conf
+      lineinfile:
+        path: /etc/lightdm/lightdm.conf
+        regexp: '^autologin-user='
+        line: "autologin-user={{ mcdonalds_viewer_user }}"
+        insertafter: '^[SeatDefaults]'
+
+    - name: Restart lightdm service
+      service:
+        name: lightdm
+        state: restarted
+  become: true
+  when: ansible_facts.packages.lightdm is defined
+
+###################################
+# GDM AUTOLOGIN
+###################################
+- block:
+    - name: Set default GDM conf file location
+      set_fact:
+        gdm_custom_conf: "/etc/gdm/custom.conf"
+
+    - name: Set Ubuntu 18.04 GDM conf file location
+      set_fact:
+        gdm_custom_conf: "/etc/gdm3/custom.conf"
+      when: ansible_distribution == "Ubuntu" and ansible_distribution_version == "18.04"
+ 
+    - name: 'Verify [daemon] section in GDM custom.conf'
+      lineinfile:
+        path: "{{ gdm_custom_conf }}"
+        line: "[daemon]"
+        create: yes
+
+    - name: Enable autologin in GDM custom.conf
+      lineinfile:
+        path: "{{ gdm_custom_conf }}"
+        regexp: "^AutomaticLoginEnable ="
+        line: "AutomaticLoginEnable = true"
+        firstmatch: true
+        insertafter: "^\\[daemon]"
+
+    - name: Set autologin user in GDM custom.conf
+      lineinfile:
+        path: "{{ gdm_custom_conf }}"
+        regexp: "^AutomaticLogin ="
+        line: "AutomaticLogin = {{ mcdonalds_viewer_user }}"
+        firstmatch: true
+        insertafter: "^\\[daemon]"
+
+    - name: Restart GDM service
+      service:
+        name: gdm
+        state: restarted
+
+    - name: Copy python-gnomekeyring debian
+      copy:
+        src: python-gnomekeyring_2.32.0+dfsg-3_amd64.deb
+        dest: /tmp/python-gnomekeyring_2.32.0+dfsg-3_amd64.deb
+     
+    - name: Install python-gnomekeyring debian
+      apt:
+        deb: /tmp/python-gnomekeyring_2.32.0+dfsg-3_amd64.deb
+      become: true
+
+    # rct 1/6/19
+    # This gave me some fits.  Disabling the GNOME login keyring via an ansible shell WOULD NOT work.
+    # Instead, we create an autostart script for the orchid_viewer user with the default password that
+    # permanently disables the login keyring at first login, and fails silently forever after.  It's 
+    # not pretty but it works.
+    - name: Install script to disable login keyring
+      template:
+        src: disable_login_keyring.sh.j2
+        dest: "/home/{{ mcdonalds_viewer_user }}/.steelfin/disable_login_keyring.sh"
+        mode: 0700
+        owner: "{{ mcdonalds_viewer_user }}"
+        group: "{{ mcdonalds_viewer_user }}"
+      become: true
+
+    - name: Run script to disable login keyring at login
+      template:
+        src: disable_login_keyring.desktop.j2
+        dest: "/home/{{ mcdonalds_viewer_user }}/.config/autostart/disable_login_keyring.desktop"
+        mode: 0644
+        owner: "{{ mcdonalds_viewer_user }}"
+        group: "{{ mcdonalds_viewer_user }}"
+      become: true
+
+  become: true
+  when: ansible_facts.packages.gdm is defined or ansible_facts.packages.gdm3 is defined

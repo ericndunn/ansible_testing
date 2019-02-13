@@ -1,0 +1,58 @@
+- name: De-immutiblize /orchives
+  file:
+    path: "{{ mcdonalds_orchives }}"
+    attributes: -i
+  become: true
+
+- name: Set /orchives to 700
+  file:
+    path: "{{ mcdonalds_orchives }}"
+    mode: 0700
+  become: true
+
+- name: Add users to Orchid
+  uri:
+    url: "http://localhost/service/users"
+    method: POST
+    user: admin
+    password: "{{ mcdonalds_orchid_password }}"
+    force_basic_auth: yes
+    body_format: "json"
+    body: "{{ item }}"
+    status_code:
+      - 200
+      - 409
+  loop:
+      - '{"username":"Staff","password":"MCd01","role":"Viewer"}'
+      - '{"username":"StoreMgr","password":"MCd02","role":"Manager"}'
+      - '{"username":"GM","password":"MCd03","role":"Manager"}'
+      - '{"username":"Admin1","password":"MCd04","role":"Administrator"}'
+      - '{"username":"ipc_service","password":"ipc0nfigur3grimace","role":"Administrator"}'
+
+- name: Set orchid.max_player_count = 16
+  lineinfile:
+    path: /etc/opt/orchid_server.properties
+    regexp: "^orchid.max_player_count ="
+    line: "orchid.max_player_count = 16"
+  become: true
+
+- name: Set rtsp.rtp_port_range.min = 10000
+  lineinfile:
+    path: /etc/opt/orchid_server.properties
+    regexp: "^rtsp.rtp_port_range.min ="
+    line: "rtsp.rtp_port_range.min = 10000"
+  become: true
+
+- name: Set rtsp.rtp_port_range.max = 20000
+  lineinfile:
+    path: /etc/opt/orchid_server.properties
+    regexp: "^rtsp.rtp_port_range.max ="
+    line: "rtsp.rtp_port_range.max = 20000"
+  become: true
+
+- name: Set rtsp.service = 10000
+  lineinfile:
+    path: /etc/opt/orchid_server.properties
+    regexp: "^rtsp.service ="
+    line: "rtsp.service = 10000"
+  become: true

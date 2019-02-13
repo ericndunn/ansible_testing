@@ -1,0 +1,5 @@
+orchid_installer_options:
+  password: '0rc#1d'
+  webserver_port: 80
+  orchives_dir: '/orchives'
+  disk_percentage: '98'

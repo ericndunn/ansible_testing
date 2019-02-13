@@ -1,0 +1,180 @@
+- name: Initialize RAID drive list
+  set_fact:
+    raid_drives: []
+
+- name: Initialize RAID partition list
+  set_fact:
+    raid_partitions: []
+
+- name: Stop Orchid service
+  include_role: 
+    name: orchid-server
+    tasks_from: manage-service.yml
+  vars:
+    orchid_service_state: stopped
+
+- name: Unmount /orchives (if mounted)
+  mount:
+    path: "{{ steelfin_raid_mount_point }}"
+    state: unmounted
+  become: true
+
+- name: De-immutablize /orchives directory
+  file:
+    path: "{{ steelfin_raid_mount_point }}"
+    state: directory
+    attributes: -i
+  become: true
+
+- name: Remove /orchives from fstab
+  mount:
+    path: "{{ steelfin_raid_mount_point }}"
+    state: absent
+  become: true
+
+- name: Filter storage devices by capacity and type
+  set_fact:
+    raid_drives: "{{ raid_drives }} + [ '/dev/{{ item.key }}' ]"
+  loop: "{{ ansible_devices | dict2items }}"
+  when: >
+      (( item.value.sectors|int * item.value.sectorsize|int ) > steelfin_raid_min_disk_size|int ) and
+      ( item.value.rotational == "1" ) and not ( item.key is match("md*") ) and item.value.model is not none
+  loop_control:
+    label: "{{ item.key }}"
+
+- name: Build list of target RAID partitions
+  set_fact:
+    raid_partitions: "{{ raid_drives | map('regex_replace', '^(.*)$', '\\g<1>1' ) | list }}"
+
+- block:
+    - name: Stop and remove any existing mdadm drives
+      shell: |
+        for dev in $(/bin/ls -d /dev/md?*); do
+          mdadm --stop $dev || true
+          mdadm --remove $dev || true
+        done
+      args:
+        executable: bash
+
+
+    - name: Wipe partition info from the RAID drives
+      shell: "wipefs --all --force {{ item }}"
+      args:
+        executable: bash
+      loop: "{{ raid_drives }}"
+
+    - name: Create new GPT partitions on RAID device.
+      parted:
+        device: "{{ item }}"
+        number: 1
+        flags: [ raid ]
+        state: present
+        part_start: 0%
+        part_end: 100%
+        label: gpt
+      loop: "{{ raid_drives }}"
+
+    - name: Unmount /orchives (if mounted)
+      mount:
+        path: "{{ steelfin_raid_mount_point }}"
+        state: unmounted
+
+    - name: Stop and remove any existing mdadm drives (AGAIN)
+      shell: |
+        sleep 5s
+        for dev in $(/bin/ls -d /dev/md?*); do
+          mdadm --stop $dev || true
+          mdadm --remove $dev || true
+        done
+      args:
+        executable: bash
+
+    - name: Wipe partition info from the RAID partitions
+      shell: "wipefs --all --force {{ item }}"
+      args:
+        executable: bash
+      loop: "{{ raid_partitions }}"
+
+    - name: Clear RAID metadata from RAID partitions.
+      shell: |
+        dd if=/dev/zero of={{ item }} bs=512 \
+            seek=$(( $(blockdev --getsz {{ item }}) - 1024)) count=1024
+        dd if=/dev/zero of={{ item }} bs=1M count=10
+        mdadm --zero-superblock --force {{ item }} 
+      args:
+        executable: bash
+      loop: "{{ raid_partitions }}"
+
+    - name: Create RAID volume
+      shell: |
+        yes | mdadm --create --verbose {{ steelfin_raid_device }} --assume-clean \
+            --level={{ steelfin_raid_level }} --raid-devices={{ raid_partitions | length }} \
+            {{ raid_partitions | join(' ')  }}
+      args:
+        executable: bash
+
+    - name: Unmount /orchives (if mounted)
+      mount:
+        path: "{{ steelfin_raid_mount_point }}"
+        state: unmounted
+
+    - name: Create filesystem on RAID volume
+      filesystem:
+        fstype: ext4
+        dev: "{{ steelfin_raid_device }}"
+        force: yes
+        opts: -m 0   
+   
+    - name: Determine mdadm.conf location (Debian)
+      set_fact:
+        mdadm_location: "/etc/mdadm/mdadm.conf"
+      when: ansible_os_family == "Debian"
+
+    - name: Determine mdadm.conf location (Red Hat)
+      set_fact:
+        mdadm_location: "/etc/mdadm.conf"
+      when: ansible_os_family == "RedHat"
+
+    - name: Gather mdadm info for mdadm.conf
+      command: "mdadm --detail --scan"
+      register: mdadm_scan_output
+
+    - name: Save mdadm info to mdadm.conf
+      lineinfile:
+        path: "{{ mdadm_location }}"
+        regexp: "^ARRAY"
+        line: "{{ mdadm_scan_output.stdout }}"
+        create: yes
+  
+    - name: Update initramfs
+      command: "/usr/sbin/update-initramfs -u"
+      when: ansible_os_family == "Debian"
+
+    - name: Unmount /orchives (if mounted)
+      mount:
+        path: "{{ steelfin_raid_mount_point }}"
+        state: unmounted
+
+    - name: Create immutable /orchives directory
+      file:
+        path: "{{ steelfin_raid_mount_point }}"
+        state: directory
+        attributes: +i
+
+    - name: Mount /orchives
+      mount:
+        path: "{{ steelfin_raid_mount_point }}"
+        src: /dev/md125
+        fstype: ext4
+        opts: nosuid,noatime,nodev,nofail
+        state: mounted
+      
+  become: true
+  when: raid_partitions|length > 1
+
+- name: Start Orchid service
+  include_role: 
+    name: orchid-server
+    tasks_from: manage-service
+  vars:
+    orchid_service_state: started

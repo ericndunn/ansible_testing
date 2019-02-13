@@ -1,0 +1,165 @@
+---
+## cmd>ansible-playbook deploy.ubuntu1404.yaml --ask-become-pass -v
+
+## Match hosts to hosts file /etc/ansible/hosts
+- hosts: [targetserver]
+
+## Variables
+  vars:
+    temp_dir: "/home/{{ ansible_env.USER }}/temp"
+    orchid_install_dir: /home/orchid/repos
+    git_branch_path: "{{ orchid_install_dir }}/automation"
+
+## Prompts for Github User and Github password
+  # vars_prompt:
+  #   - name: "githubuser"
+  #     prompt: "Enter your github username"
+  #     private: no
+  #   - name: "githubpassword"
+  #     prompt: "Enter your github password"
+  #     private: yes
+
+  remote_user: orchid
+
+  gather_facts: true
+
+  tasks:                                                           
+
+    # - name: Install list of packages
+    #   apt: name={{item}} state=installed          
+    #   with_items:
+    #     - git
+    #     #- nfs-common
+    #     #- rsync        
+    #     - curl       
+    #     - wget
+    #   #force: yes  
+    #   become: true
+    #   when: ansible_distribution == "Ubuntu"      
+    #   tags:
+    #     - default
+
+    # - name: Install list of packages
+    #   yum: name={{item}} state=installed          
+    #   with_items:
+    #     - git
+    #     #- nfs-utils
+    #     #- rsync        
+    #     - curl       
+    #     - wget      
+    #   become: true
+    #   when: ansible_distribution == "CentOS"      
+    #   tags:
+    #      - default        
+
+#####--------------------------- START CLONE GIT REPO --------------------------------------------------------------                                                                                          
+     
+    - name: Delete directory if exist - {{ orchid_install_dir }}
+      file:
+        path: "{{ orchid_install_dir }}"
+        state: absent
+      become: true        
+      tags:
+        - default
+
+    - name: Create directory for git repository files - {{ orchid_install_dir }}
+      file:
+        path: "{{ orchid_install_dir }}"
+        state: directory
+        mode: 0755
+      become: true        
+      tags:
+        - default
+
+    - name: Ansible delete file glob *.yaml
+      find:
+        paths: "{{ orchid_install_dir }}"
+        patterns: "*.yaml"
+      register: files_to_delete
+      become: true
+      tags:
+        - default      
+
+    - name: Ansible remove file glob *.yaml
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      with_items: "{{ files_to_delete.files }}"
+      become: true
+      tags:
+        - default                       
+
+    - name: "Get updated files from git repository ({{ lookup('env', 'GIT_BRANCH') }})"
+      git: 
+        repo: 'https://{{ githubuser }}:{{ githubpassword }}@github.com/ipconfigure/integrations.git'
+        version: "{{ lookup('env', 'GIT_BRANCH') }}"
+        dest: "{{ orchid_install_dir }}"
+        force: yes        
+      become: true
+      tags:
+        - default
+
+    - stat: path={{git_branch_path}}
+      register: git_branch_dir
+      become: true      
+      tags:
+        - default      
+
+    # - debug: var=git_branch_dir
+    #   become: true    
+    #   tags:
+    #     - default
+
+    # - name: DEBUG | Identify the "{{ git_branch_dir.stat.path }}" (stdout)
+    #   debug: 
+    #     msg: 
+    #       - "STDOUT:"
+    #       #- "{{ stat.path.split('\n') }}"
+    #   tags:
+    #     - default             
+
+    # - name: Run Machine Script if path exists
+    #   shell: "cd {{ orchid_install_dir }}/steelfin_config/orchid-linux && ./setup_steelfin_machine.sh {{ lookup('env', 'SERIAL_NUM') }} {{ lookup('env', 'RAID_LEVEL') }}"
+    #   args:
+    #     executable: /bin/bash
+    #   when: git_branch_dir.stat.exists
+    #   become: true 
+    #   register: run_machine_script
+    #   tags:
+    #     - default
+
+    # - debug: var=run_machine_script
+    #   become: true    
+    #   tags:
+    #     - default   
+        
+    # - name: Run User Script if path exists
+    #   shell: "cd {{ orchid_install_dir }}/steelfin_config/orchid-linux && ./setup_steelfin_user.sh"
+    #   args:
+    #     executable: /bin/bash
+    #   when: git_branch_dir.stat.exists
+    #   register: run_user_script
+    #   tags:
+    #     - default
+
+    # - debug: var=run_user_script   
+    #   tags:
+    #     - default         
+
+
+
+    # - name: Change the working directory to /home/orchid/repos/steelfin_config/orchid-linux/ and run Orchid Script command - setup_steelfin_machine.sh
+    #   command: "./setup_steelfin_machine.sh {{ lookup('env', 'SERIALNUM') }} {{ lookup('env', 'SETRAID') }}"
+    #   args:
+    #     chdir: /home/orchid/repos/steelfin_config/orchid-linux/
+    #   become: true
+    #   environment:
+    #     ACCEPT_EULA: 'y'      
+    #   tags:
+    #     - default         
+
+
+        
+
+
+

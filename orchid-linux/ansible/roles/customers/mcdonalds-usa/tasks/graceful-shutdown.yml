@@ -1,0 +1,69 @@
+- name: Install compilation prerequisites
+  apt:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+      - g++-4.8
+      - gcc-4.8
+      - make
+      - libusb-dev
+  become: true
+
+- name: Remove existing compilation directory
+  file:
+    path: /tmp/nut-2.7.1-ipconfig
+    state: absent
+  become: true
+
+- name: Extract ipcbase-nut.tar.gz
+  unarchive:
+    src: ipcbase-nut.tar.gz
+    dest: /tmp
+
+- name: Compile nut 2.7.1
+  shell: |
+    cd /tmp/nut-2.7.1-ipconfig
+    CXX=g++-4.8 CC=gcc-4.8 ./configure --without-ssl
+    nice make -j11
+
+- name: Install nut 2.7.1
+  shell: |
+    cd /tmp/nut-2.7.1-ipconfig
+    sudo make install
+  become_user: root
+  become: true
+
+- name: Extract nut support files
+  unarchive:
+    src: ipcsupp-nut.tar.gz
+    dest: /
+  become: true
+
+- name: Configure nut init.d scripts
+  shell: |
+    cd /etc/init.d
+    update-rc.d nut defaults
+    update-rc.d nut enable
+  become: true
+
+- name: Create /var/state directory
+  file:
+    path: /var/state
+    state: directory
+    mode: 0777
+  become: true
+
+- name: Create /var/state/ups directory
+  file:
+    path: /var/state/ups
+    state: directory
+    mode: 0777
+  become: true
+
+- name: Set udev rule for USB UPS
+  lineinfile:
+    path: /etc/udev/rules.d/usb.rules
+    line: 'SUBSYSTEM=="usb", ATTR{idVendor}=="09ae", ATTR{idProduct}=="4004", MODE:="0666"'
+    create: yes
+  become: true

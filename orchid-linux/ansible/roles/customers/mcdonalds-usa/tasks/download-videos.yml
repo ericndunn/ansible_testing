@@ -1,0 +1,37 @@
+- name: Test if local download mirror is available
+  uri:
+    url: "{{ mcdonalds_mirror_downloads }}"
+    return_content: yes
+  register: video_mirror_response
+  ignore_errors: yes
+
+- name: Use local mirror (if available)
+  set_fact:
+    mcdonalds_downloads: "{{ mcdonalds_mirror_downloads }}"
+  when: video_mirror_response.status == 200
+
+- name: Download Wachter training videos for primary user
+  get_url:
+    url: "{{ mcdonalds_downloads }}/{{ item }}"
+    dest: "/home/{{ mcdonalds_primary_user }}/Desktop/{{ item }}"
+    mode: 0444
+  become: true
+  become_user: "{{ mcdonalds_primary_user }}"
+  loop:
+    - 'IPConfigure_Archive_Training_Video.mov'
+    - 'IPConfigure_Video_Export_Training.mov'
+    - 'Wachter_IPConfigure_Live_View_Training.mov'
+
+- name: Copy Wachter training videos from primary to viewer user Desktop
+  copy:
+    src: '/home/{{ mcdonalds_primary_user }}/Desktop/{{ item }}'
+    dest: '/home/{{ mcdonalds_viewer_user }}/Desktop/{{ item }}'
+    remote_src: true
+    owner: "{{ mcdonalds_viewer_user }}"
+    group: "{{ mcdonalds_viewer_user }}"
+    mode: 0444
+  become: true
+  loop:
+    - 'IPConfigure_Archive_Training_Video.mov'
+    - 'IPConfigure_Video_Export_Training.mov'
+    - 'Wachter_IPConfigure_Live_View_Training.mov'

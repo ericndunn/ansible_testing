@@ -1,0 +1,43 @@
+End User Access Agreement
+
+CAREFULLY READ THESE TERMS AND CONDITIONS AND DO NOT ACCESS OR USE THE PORTAL UNTIL YOU HAVE READ AND AGREED TO THE TERMS OF THIS END USER ACCESS AGREEMENT. THIS IS A LEGALLY BINDING AGREEMENT. BY CLICKING THE "I have read and accept the terms of the access agreement" BOX YOU: (i) REPRESENT THAT YOU ARE DULY AUTHORIZED TO ACCESS AND USE THE PORTAL; AND (ii) ACCEPT THESE TERMS AND AGREE THAT YOU ARE LEGALLY BOUND BY THEM. IF YOU DO NOT AGREE TO THESE TERMS OF USE, DO NOT CLICK THE "I have read and accept the terms of the access agreement" BOX AND YOU MUST NOT ACCESS OR USE THE PORTAL.
+
+This End User Access Agreement ("Agreement") governs your use of the Portal, including all user manuals (the "Documentation") provided to you ("Licensee") for use pursuant to and subject to a Services Agreement (the "Services Agreement") between IPConfigure, Inc.  ("Licensor") and you ("Licensee").
+
+1. Access Grant. Subject to your strict compliance with this Agreement, Licensor hereby grants you a non-exclusive, non-transferable, non-sublicensable, limited license to access and use the Portal and Documentation solely for Licensee’s internal business purposes. Your access to the Portal will terminate immediately on the earlier to occur of: (a) termination or expiration of the Services Agreement, or (b) your ceased to be authorized by Licensee to access and use the Portal.
+
+2. Restrictions. You shall not, directly or indirectly:
+
+(a) copy, modify or create derivative works or improvements of the Portal or Documentation;
+
+(b) rent, lease, lend, sell, sublicense, assign, distribute, publish, transfer or otherwise make available the Portal or Documentation to any person, including on or in connection with the internet or any time-sharing, service bureau, software as a service, cloud or other technology or service;
+
+(c) bypass or breach any security device or protection used by the Portal or access or use the Portal other than by your own then valid user ID, password or other credentials issued to you by Licensee ("Access Credentials");
+
+(d) input, upload, transmit or otherwise provide to or through the Portal, any information or materials that are unlawful or injurious, or contain, transmit or activate any virus or other malicious or harmful code;
+
+(e) damage, destroy, disrupt, disable, impair, interfere with or otherwise impede or harm in any manner the Portal or Licensor’s provision of services to any third party, in whole or in part;
+
+(f) remove, delete, alter or obscure any trademarks, Documentation, warranties or disclaimers, or any copyright, trademark, patent or other intellectual property or proprietary rights notices from the Documentation or relating to the Portal;
+
+(g) access or use the Portal in any manner or for any purpose that infringes, misappropriates or otherwise violates any intellectual property right or other right of any third party, or that violates any applicable Law;
+
+(h) access or use the Portal or Documentation for purposes of competitive analysis of the Portal, the development, provision or use of a competing software service or product or any other purpose that is to the Licensor’s detriment or commercial disadvantage; or (i) otherwise access or use the Portal or Documentation beyond the scope of the authorization granted under Section 1 above.
+
+3. Access Credentials. You must, at all times, comply with Licensee’s policies regarding the use and confidentiality of Access Credentials.
+
+4. Use of the Portal and Data. Your use of the Portal, Documentation and data accessible through the Portal must, at all times, comply with all applicable laws. Unauthorized access and improper use is prohibited. Your attempts to access the Portal and your activity within the Portal may be monitored and recorded in accordance with Licensor’s policies.
+
+5. Intellectual Property Rights. You acknowledge that the Portal and related software is provided under license, and not sold, to you. You do not acquire any ownership interest in the Portal, Licensor’s systems or software under this Agreement, or any other rights to thereto, other than to use the Portal in accordance with the license granted under this Agreement, subject to all terms, conditions and restrictions. Licensor retains its entire right, title and interest in and to the Portal, Licensor’s systems and software and all intellectual property rights arising out of or relating to thereto, subject to the license expressly granted to you in this Agreement.
+
+6. DISCLAIMER OF WARRANTIES. THE PORTAL, ALL SERVICES AND DOCUMENTATION ARE PROVIDED "AS IS" AND LICENSOR HEREBY DISCLAIMS ALL WARRANTIES, WHETHER EXPRESS, IMPLIED, STATUTORY OR OTHER, AND LICENSOR SPECIFICALLY DISCLAIMS ALL IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON- INFRINGEMENT, AND ALL WARRANTIES ARISING FROM COURSE OF DEALING, USAGE OR TRADE PRACTICE. WITHOUT LIMITING THE FOREGOING, LICENSOR MAKES NO WARRANTY OF ANY KIND THAT THE PORTAL, SYSTEM, SERVICES OR DOCUMENTATION, OR ANY RESULTS OF THE USE THEREOF, WILL MEET LICENSEE’S, YOUR, OR ANY OTHER PERSON’S REQUIREMENTS, OPERATE WITHOUT INTERRUPTION, ACHIEVE ANY INTENDED RESULT, BE COMPATIBLE OR WORK WITH ANY SOFTWARE, SYSTEM OR OTHER SERVICES, OR BE SECURE, ACCURATE, COMPLETE, VIRUS FREE OR ERROR FREE.  
+
+7. DISCLAIMER OF LIABILITY. IN NO EVENT WILL LICENSOR OR ANY OF ITS LICENSORS, SERVICE PROVIDERS OR SUPPLIERS BE LIABLE UNDER OR IN CONNECTION WITH THIS AGREEMENT OR ITS SUBJECT MATTER UNDER ANY LEGAL OR EQUITABLE THEORY, INCLUDING BREACH OF CONTRACT, TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY AND OTHERWISE, FOR ANY: (a) LOSS OF PRODUCTION, USE, BUSINESS, REVENUE OR PROFIT, OR DIMINUTION IN VALUE; (b) IMPAIRMENT, INABILITY TO USE OR LOSS, INTERRUPTION OR DELAY OF THE SERVICES, (c) LOSS, DAMAGE, CORRUPTION OR RECOVERY OF DATA, OR BREACH OF DATA OR PORTAL OR SYSTEM SECURITY, (d) DAMAGE TO PROPERTY, PERSONAL INJURY OR DEATH, OR (e) CONSEQUENTIAL, INCIDENTAL, INDIRECT, EXEMPLARY, SPECIAL, ENHANCED OR PUNITIVE DAMAGES, REGARDLESS OF WHETHER SUCH PERSONS WERE ADVISED OF THE POSSIBILITY OF SUCH LOSSES OR DAMAGES OR SUCH LOSSES OR DAMAGES WERE OTHERWISE FORESEEABLE, AND NOTWITHSTANDING THE FAILURE OF ANY AGREED OR OTHER REMEDY OF ITS ESSENTIAL PURPOSE.
+
+8. Confidentiality. The Portal, Documentation and all related software and materials shall be deemed "Confidential Information" without any marking or other designation. You will hold in confidence and not use or disclose any such Confidential Information. You acknowledge and agree that the disclosure of any such Confidential Information will cause substantial harm to Licensor for which the payment of damages along will not be sufficient. Licensor shall be entitled to all remedies available at law or in equity in the event of a breach by you of these provisions.
+
+9. Governing Law; Jurisdiction and Venue. This Agreement is governed by and construed in accordance with the internal laws of the Commonwealth of Virginia without giving effect to any choice or conflict of law provision or rule that would require or permit the application of the laws of any jurisdiction other than those of the Commonwealth of Virginia.  Any legal suit, action or proceeding arising out of or related to this Agreement or the licenses granted hereunder shall be instituted exclusively in the United States District Court for the Eastern District of Virginia, Norfolk Division, or the courts of the Commonwealth of Virginia located in the city of Norfolk, Virginia. You hereby waive any objection you may have in any such action based on lack of personal jurisdiction, improper venue or inconvenient forum.
+
+10. Relationship. You agree that no joint venture, partnership, employment, or agency relationship exists between you and Licensor as a result of this Agreement. You may not assign or transfer any of your rights or obligations hereunder without the express written consent of Licensor.
+
+11. Severability; Waiver. If any part of this Agreement is determined to be invalid or unenforceable pursuant to applicable law including, but not limited to, the warranty disclaimers and liability limitations set forth above, then the invalid or unenforceable provision will be deemed superseded by a valid, enforceable provision that most closely matches the intent of the original provision and the remainder of the Agreement shall continue in effect. A party’s waiver of any breach of this Agreement shall not constitute a waiver of any other breach, and a party’s failure to demand performance of any obligation shall not constitute a waiver of a party’s right to demand performance of such obligation in the future.

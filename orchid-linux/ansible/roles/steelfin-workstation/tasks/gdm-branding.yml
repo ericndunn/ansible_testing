@@ -1,0 +1,74 @@
+- name: Set gdm greeter CSS file (Ubuntu 18.04)
+  set_fact:
+    gdm_css: /usr/share/gnome-shell/theme/gnome-shell.css
+  when: ansible_distribution == "Ubuntu" and ansible_distribution_version == "18.04"
+
+- name: Set gdm greeter background on lock screen
+  replace:
+    path: "{{ gdm_css }}"
+    regexp: 'resource:///org/gnome/shell/theme/noise-texture.png'
+    replace: 'file:///usr/share/pixmaps/orchid_background_blank.png'
+  when: gdm_css is defined
+  become: true
+
+- name: Set gdm custom profile
+  copy:
+    content: |
+      user-db:user
+      system-db:gdm
+      file-db:/usr/share/gdm/greeter-dconf-defaults
+    dest: /etc/dconf/profile/gdm
+  become: true
+
+- name: Create gdm config directory
+  file:
+    path: /etc/dconf/db/gdm.d
+    state: directory
+    recurse: yes
+  become: true
+
+- name: Set gdm greeter preferences
+  copy:
+    content: |
+        [org/gnome/login-screen]
+        logo='/usr/share/pixmaps/poweredby_ipconfigure.svg'
+
+        [org/gnome/desktop/lockdown]
+        disable-lock-screen=true
+
+        [org/gnome/desktop/session]
+        idle-delay=0
+
+        [org/gnome/desktop/screensaver]
+        picture-uri='/usr/share/pixmaps/orchid_background_blank.png'
+        lock-enabled=false
+        idle-activation-enabled=false
+    dest: /etc/dconf/db/gdm.d/00-login-screen
+  become: true
+
+- name: Rebuild dconf database for gdm greeter
+  command: /usr/bin/dconf update
+  register: dconf_status
+  failed_when: dconf_status.rc != 0
+  become: true
+
+# This was a tricky one; editing the gdm theme CSS file has no effect
+# because it's compiled into a gresource file.
+#
+# The gresource file in resources/ was modified from one in CentOS 7.
+# This seems to wreck Ubuntu 18.04.  TODO: Generate one from Ubuntu's 
+# resources.
+#
+# See here: https://bbs.archlinux.org/viewtopic.php?id=197036
+- name: Copy gdm resources file
+  copy:
+    src: gnome-shell-theme.gresource
+    dest: /usr/share/gnome-shell/gnome-shell-theme.gresource
+  become: true
+  when: ansible_os_family == "RedHat"
+
+- name: Restart gdm service
+  systemd:
+    name: gdm
+    state: restarted
+  become: true

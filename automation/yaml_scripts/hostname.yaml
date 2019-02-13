@@ -1,0 +1,63 @@
+#cat > ${WORKSPACE}/hostname.yaml <<EOF
+---
+- hosts: "orchids"
+
+  remote_user: orchid
+
+  gather_facts: true
+
+  vars:
+    serialnumber: "orchid-{{ lookup('env','SERIALNUMBER') }}"
+    
+  tasks:
+
+  - name: Comment 1 line in hosts file  
+    replace:
+      path: /etc/hosts
+      regexp: '^127.0.0.1'
+      replace: '#127.0.0.1'
+      backup: yes 
+    become: yes
+    register: comment1
+  - debug: msg="{{ comment1 }}" 
+
+  - name: Comment 2 a line in hosts file  
+    replace:
+      path: /etc/hosts
+      regexp: '^127.0.1.1'
+      replace: '#127.0.1.1'
+      backup: yes 
+    become: yes
+    register: comment2
+  - debug: msg="{{ comment2 }}"     
+
+  - name: Replacing a line in hosts file2
+    lineinfile:
+      path: /etc/hosts
+      line: '127.0.0.1 localhost orchid-{{ inventory_hostname }}'
+      insertbefore: BOF
+      backup: yes 
+    become: yes
+    register: addtext
+  - debug: msg="{{ addtext }}"
+  
+  - hostname:
+      name: "orchid-{{ inventory_hostname }}"
+    become: true
+    register: serialnum
+  - debug: msg="{{ serialnum }}"
+
+  
+
+  #- name: Replacing a line in hosts file
+  #  lineinfile: 
+  #    path: /etc/hostname
+  #    regexp: 'kickseed' 
+  #    line: '{{ serialnumber }}'
+  #    backup: yes
+  #  become: yes
+  #  register: replacehostname
+  #- debug: msg="{{ replacehostname }}"  
+
+
+#EOF

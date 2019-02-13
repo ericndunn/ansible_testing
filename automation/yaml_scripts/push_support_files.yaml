@@ -1,0 +1,71 @@
+---
+## Match hosts to hosts file /etc/ansible/hosts
+- hosts: "targetserver"
+
+## Variables
+  vars:
+    src_dir: /var/ftp/pub/steelfin/serial
+    vpn_scripts_dir: /home/orchid/vpn_scripts     
+    dest_dir: /home/orchid/Desktop
+    ticket_num: "{{ lookup('env', 'TICKET_NUM') }}"
+    support_file: "{{ lookup('env', 'SUPPORT_FILE') }}"
+    warranty_file: "{{ lookup('env', 'WARRANTY_FILE') }}"    
+
+  remote_user: orchid
+
+  gather_facts: true
+
+  tasks:
+
+    # - name: Ansible delete file glob
+    #   find:
+    #     paths: /home/orchid/Desktop/
+    #     patterns: 
+    #       - orchid*.pdf 
+    #       - steelfin*.pdf
+    #   register: files_to_delete
+
+    # - name: Ansible remove file glob
+    #   file:
+    #     path: "{{ item.path }}"
+    #     state: absent
+    #   with_items: "{{ files_to_delete.files }}"
+    #   become: true
+
+    - name: Delete all support and warranty pdfs
+      shell: "rm -rf {{ dest_dir }}/orchid*.pdf {{ dest_dir }}/steelfin*.pdf"
+      register: files_to_delete      
+      become: true
+
+    - debug:
+        msg: "Ran the following command - {{ files_to_delete.cmd }}"       
+
+    - name: "Copying PDF support and warranty files with owner and permissions to {{ dest_dir }}"
+      copy:
+        src: "{{ item }}"
+        dest: "{{ dest_dir }}"
+        owner: orchid
+        group: orchid
+        mode: 0755
+      with_fileglob:
+        - "{{ src_dir }}/ticket_{{ ticket_num }}/*.pdf"        
+      become: true
+
+    - name: Creates directory
+      file:
+        path: "{{ vpn_scripts_dir }}"
+        state: directory
+        owner: orchid
+        group: orchid
+        mode: 0775       
+
+    - name: "Copying vpn scripts to {{ vpn_scripts_dir }}"
+      copy:
+        src: "{{ item }}"
+        dest: "{{ vpn_scripts_dir }}"
+        owner: orchid
+        group: orchid
+        mode: 0775
+      with_fileglob:
+        - "{{ src_dir }}/ticket_{{ ticket_num }}/vpn_scripts/*.sh"        
+      become: true            

@@ -1,0 +1,14 @@
+- name: 'Verify [SeatDefaults] section in lightdm.conf'
+  lineinfile:
+    path: /etc/lightdm/lightdm.conf
+    line: '[SeatDefaults]'
+    create: yes
+  become: true
+
+- name: Disable Guest logins in lightdm.conf
+  lineinfile:
+    path: /etc/lightdm/lightdm.conf
+    regexp: '^allow-guest='
+    line: 'allow-guest=false'
+    insertafter: "^\\[SeatDefaults]"
+  become: true
