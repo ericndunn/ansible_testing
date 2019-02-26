@@ -1,0 +1,27 @@
+---
+
+- name: Execute - setup_steelfin_machine.sh
+  command: /home/orchid/repos/steelfin_config/orchid-linux/setup_steelfin_machine.sh
+  args:
+    chdir: /home/orchid/repos/steelfin_config/orchid-linux/       
+  become: true
+  register: machine_script
+
+- name: DEBUG | Results of Execute - setup_steelfin_machine.sh
+  debug:
+     msg: "{{ machine_script.stdout.split('\n') }}"
+
+## COMMENT TEST             
+
+- name: Execute - setup_steelfin_user.sh
+  command: /home/orchid/repos/steelfin_config/orchid-linux/setup_steelfin_user.sh
+  args:
+    chdir: /home/orchid/repos/steelfin_config/orchid-linux/
+  become_user: orchid                
+  register: user_script
+
+- name: DEBUG | Results of Execute - setup_steelfin_user.sh
+  debug:
+     msg: "{{ user_script.stdout.split('\n') }}"                  
+
+

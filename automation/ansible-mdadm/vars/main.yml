@@ -1,0 +1,4 @@
+---
+# vars file for ansible-mdadm
+vars:
+    my_array_raid_level: "{{ array_raid_level }}"

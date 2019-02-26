@@ -1,0 +1,319 @@
+---
+
+- name: Check for a supported Operating System
+  assert:
+    that:
+      - (ansible_distribution == 'Ubuntu' and ansible_distribution_version == '18.04') or
+        (ansible_distribution == 'Ubuntu' and ansible_distribution_version == '16.04') or
+        (ansible_distribution == 'Ubuntu' and ansible_distribution_version == '14.04') or
+        (ansible_os_family == 'RedHat' and ansible_distribution_major_version == '7')
+    msg: "The only supported platforms for this release are Ubuntu 18.04 LTS, Ubuntu 16.04 LTS, Ubuntu 14.04 LTS, CentOS 7."
+  # tags:
+  #   - check-operating-system
+
+- name: Creates orchives directory
+  file:
+    path: /orchives
+    state: directory
+    owner: root
+    group: root
+    mode: 0775
+  become: True  
+
+
+- name: Run raid_size_threshold | get list of disks
+  shell: |
+    raid_size_threshold=$(( 900 * 2**30 ))
+    for device in $(/bin/ls /dev/sd?); do
+      if [[ $(blockdev --getsize64 "$device") -gt $raid_size_threshold ]]; then
+        echo "$device"
+      fi
+    done
+    exit 0
+  args:
+    executable: /bin/bash    
+  become: True
+  register: raidlist
+
+- debug: var=raidlist.stdout_lines
+
+# ------------------------------------------------------------------------------
+# Remove RAID and clear/clean disks
+- debug: var=raidlist
+
+- name: Make a list from raidlist
+  set_fact: raidlist_name="{{ raidlist.stdout | replace('\n', ' ')}}"
+
+- debug: var=raidlist_name
+
+- name: Identify the space available
+  shell: |
+    /bin/echo "--- BEFORE CHECK ---"
+    /bin/cat /proc/mdstat
+    /sbin/fdisk -l
+    for device in $(/bin/ls /dev/md125); do
+      /bin/umount -l /orchives
+      /sbin/mdadm --stop /dev/md125
+      /sbin/mdadm --remove /dev/md125           
+      /sbin/mdadm --zero-superblock --force "{{ raidlist_name }}"
+      /bin/echo "{{ raidlist_name }}"
+      /bin/dd if=/dev/zero of="{{ raidlist_name }}" bs=512 seek=$(( $(blockdev --getsz "{{ raidlist_name }}") - 1024 )) count=1024
+      /bin/dd if=/dev/zero of="{{ raidlist_name }}" bs=1M count=10
+      /sbin/wipefs -af "{{ raidlist_name }}"
+      /bin/cat /proc/mdstat           
+      /sbin/fdisk -l
+    done
+    exit 0
+  args:
+    executable: /bin/bash
+  become: True
+  register: space
+
+- name: DEBUG | Identify the space available (stdout)
+  debug: 
+    msg: 
+      - "STDOUT:"
+      - "{{ space.stdout.split('\n') }}"
+      - "STDERR: (Results from /bin/cat /proc/mdstat)"
+      - "{{ space.stderr.split('\n') }}"    
+
+- name: Remove line in mdadm.conf file
+  lineinfile:
+    path: /etc/mdadm/mdadm.conf
+    state: absent
+    regexp: '^ARRAY'
+  become: true
+  register: "array_line_rm"
+
+- name: "DEBUG | Remove line"
+  debug:
+    msg: "{{ array_line_rm }}"
+
+- name: arrays | Updating Initramfs (initial)
+  command: "{{ update_initramfs }}"    
+
+- name: Remove line in fstab file
+  lineinfile:
+    path: /etc/fstab
+    state: absent
+    regexp: '^/dev/md'
+  become: true
+  register: "fstab_line_rm"
+
+- name: "DEBUG | Remove line"
+  debug:
+    msg: "{{ fstab_line_rm }}"
+# -------------------------------------------------------------------------------
+
+# Checking for any existing raid arrays
+- name: arrays | Checking Status Of Array(s)
+  shell: "cat /proc/mdstat | grep {{ item.name }}"
+  register: "array_check"
+  changed_when: false
+  failed_when: false
+  with_items: '{{ mdadm_arrays }}'
+  check_mode: no
+
+- name: DEBUG | Checking Status Of Array(s)
+  debug:
+    msg: "{{ array_check }}"    
+
+# Creating raid arrays
+# We pass yes in order to accept any questions prompted for yes|no
+- name: arrays | Creating Array(s)
+  shell: "yes | mdadm --create --verbose /dev/{{ item.name }} --assume-clean --level={{ item.level }} --raid-devices={{ item.devices|count }} {{ item.devices| join (' ') }}"
+  register: "array_created"
+  with_items: '{{ mdadm_arrays }}'
+  when: >
+        item.state|lower == "present" and
+        array_check.results[0].rc != 0
+
+- name: DEBUG | Creating Array(s)
+  debug:
+    msg: "{{ array_created }}"
+
+- name: Create a ext4 filesystem on /dev/md125
+  command: mkfs.ext4 -m 0 /dev/md125
+  register: mkfilesys    
+
+- name: DEBUG | Create a ext4 filesystem on /dev/md125
+  debug:
+    msg: "{{ mkfilesys }}"    
+
+# Updates initramfs archives in /boot
+- name: arrays | Updating Initramfs
+  command: "{{ update_initramfs }}"
+  when: array_created.changed
+
+# Capture the raid array details to append to /etc/mdadm/mdadm.conf
+# in order to persist between reboots
+- name: arrays | Capturing Array Details
+  command: "mdadm --detail --scan"
+  register: "array_details"
+  changed_when: false
+
+- name: DEBUG | Capturing Array Details
+  debug:
+    msg: "{{ array_details }}"  
+
+# Creating raid arrays filesystem
+- name: arrays | Creating Array(s) Filesystem
+  filesystem:
+    fstype: "{{ item.filesystem }}"
+    dev: "/dev/{{ item.name }}"
+  with_items: '{{ mdadm_arrays }}'
+  when: item.state|lower == "present"
+  register: "createarrayfs"
+
+- name: DEBUG | Creating Array(s) Filesystem
+  debug:
+    msg: "{{ createarrayfs }}"  
+
+# Mounting raid arrays
+- name: arrays | Mounting Array(s)
+  mount:
+    name: "{{ item.mountpoint }}"
+    src: "/dev/{{ item.name }}"
+    fstype: "{{ item.filesystem }}"
+    state: "mounted"
+    opts: "{{ item.opts | default(omit) }}"
+  with_items: '{{ mdadm_arrays }}'
+  when: item.state|lower == "present"
+  register: "array_mount"
+
+- name: DEBUG | Mounting Array(s)
+  debug:
+    msg: "{{ array_mount }}"   
+
+# Unmounting raid arrays in preparation of destroying
+- name: arrays | Unmounting Array(s)
+  mount:
+    name: "{{ item.mountpoint }}"
+    src: "/dev/{{ item.name }}"
+    state: "unmounted"
+  with_items: '{{ mdadm_arrays }}'
+  when: item.state|lower == "absent"
+  register: "array_unmount"
+
+- name: DEBUG | Unmounting Array(s)
+  debug:
+    msg: "{{ array_unmount }}"
+
+# Stopping raid arrays in preparation of destroying
+- name: arrays | Stopping Array(s)
+  command: "mdadm --stop /dev/{{ item.name }}"
+  register: "array_stopped"
+  with_items: '{{ mdadm_arrays }}'
+  when: >
+        item.state|lower == "absent" and
+        array_check.results[0].rc == 0 
+  
+- name: DEBUG | Stopping Array(s)
+  debug:
+    msg: "{{ array_stopped }}"        
+
+# Removing raid arrays
+- name: arrays | Removing Array(s)
+  command: "mdadm --remove /dev/{{ item.name }}"
+  register: "array_removed"
+  with_items: '{{ mdadm_arrays }}'
+  when: >
+        item.state|lower == "absent" and
+        array_check.results[0].rc == 0  
+  
+- name: DEBUG | Removing Array(s)
+  debug:
+    msg: "{{ array_removed }}"          
+
+# Zeroing out the disk devices which were part of the raid array
+- name: arrays | Zeroing Out Array Devices
+  command: "mdadm --zero-superblock {{ item.1 }}"
+  register: "array_zero" 
+  with_subelements:
+    - '{{ mdadm_arrays }}'
+    - devices
+  when: >
+        item.0.state|lower == "absent" and
+        array_check.results[0].rc == 0 and
+        array_removed.changed
+ 
+  
+- name: DEBUG | Zeroing Out Array Devices
+  debug:
+    msg: "{{ array_zero }}"         
+
+# Wiping out the disk devices which were part of the raid array
+- name: arrays | Wiping Out Array Devices
+  command: "wipefs -af {{ item.1 }}"
+  register: "array_wipe"   
+  with_subelements:
+    - '{{ mdadm_arrays }}'
+    - devices
+  when: >
+        item.0.state|lower == "absent" and
+        array_check.results[0].rc == 0 and
+        array_removed.changed
+ 
+  
+- name: DEBUG | Wiping Out Array Devices
+  debug:
+    msg: "{{ array_wipe }}"        
+
+- name: arrays | Ensure /etc/mdadm/ directory exists
+  file:
+    path: /etc/mdadm/
+    state: directory
+
+- name: arrays | Ensure /etc/mdadm/mdadm.conf file exists
+  copy:
+    content: ""
+    dest: /etc/mdadm/mdadm.conf
+    force: no
+
+# Updating /etc/mdadm/mdadm.conf in order to persist between reboots
+- name: arrays | Updating /etc/mdadm/mdadm.conf - persist
+  lineinfile:
+    dest: "/etc/mdadm/mdadm.conf"
+    regexp: "^{{ item }}"
+    line: "{{ item }}"
+    state: "present"
+  with_items: '{{ array_details.stdout_lines }}'
+  when: array_created.changed
+  register: "updatemdmconfpersist"  
+  
+- name: DEBUG | Updating /etc/mdadm/mdadm.conf
+  debug:
+    msg: "{{ updatemdmconfpersist }}"
+
+
+# Updating /etc/mdadm/mdadm.conf in order to not persist between reboots
+- name: arrays | Updating /etc/mdadm/mdadm.conf - not persist
+  lineinfile:
+    dest: "/etc/mdadm/mdadm.conf"
+    regexp: "^ARRAY /dev/{{ item.name }}"
+    line: "ARRAY /dev/{{ item.name }}"
+    state: "absent"
+  with_items: '{{ mdadm_arrays }}'
+  when: >
+        item.state == "absent"
+  register: "updatemdmconfnotpersist"  
+  
+- name: DEBUG | Updating /etc/mdadm/mdadm.conf
+  debug:
+    msg: "{{ updatemdmconfnotpersist }}"        
+
+# Updates initramfs archives in /boot
+- name: arrays | Updating Initramfs
+  command: "{{ update_initramfs }}"
+  when: array_removed.changed and ansible_os_family == "Debian"
+
+# Updates initramfs archives in /boot
+- name: arrays | Updating Initramfs
+  command: "mv /boot/initramfs-$(uname -r).img /boot/initramfs-$(uname -r)-backup.img"
+  when: array_removed.changed and ansible_os_family == "RedHat"
+
+# Updates initramfs archives in /boot
+- name: arrays | Updating Initramfs
+  command: "dracut /boot/initramfs-$(uname -r).img $(uname -r)"
+  when: array_removed.changed and ansible_os_family == "RedHat"
+

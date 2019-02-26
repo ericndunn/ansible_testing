@@ -1,0 +1,9 @@
+---
+#- name: debian | Installing mdadm
+#  apt:
+#    name: "mdadm"
+#    state: "present"
+
+- name: arrays | Set update_initramfs cmd to update-initramfs -u
+  set_fact:
+    update_initramfs: "update-initramfs -u"
