@@ -53,8 +53,8 @@ verify_steelfin_os() {
 
         # First verify the distro_id is valid, then check distro_release.
         if [[ $distro_id == "Ubuntu" ]]; then
-            if [[ $distro_release != "14.04" ]] && [[ $distro_release != "16.04" ]] && [[ $distro_release != "18.04" ]]; then
-                die_with_error "Unsupported Ubuntu version ${distro_release}.  Only 14.04, 16.04, and 18.04 are supported."
+            if [[ $distro_release != "14.04" ]] && [[ $distro_release != "16.04" ]]; then
+                die_with_error "Unsupported Ubuntu version ${distro_release}.  Only 14.04 and 16.04 are supported."
             fi
         elif [[ $distro_id == "CentOS" ]]; then
             if ! grep '^7\..*' &> /dev/null <<< $distro_release ; then

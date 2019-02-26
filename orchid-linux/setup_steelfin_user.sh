@@ -29,14 +29,10 @@ set_default_applications() {
 
     mkdir -p ~/.local/share/applications/
 
-    if [[ $distro_id == "Ubuntu" ]] && [[ $distro_release == "16.04" ]] || [[ $distro_release == "14.04" ]]; then
-        default_browser="google-chrome.desktop"
-    elif [[ $distro_id == "Ubuntu" ]] && [[ $distro_release == "18.04" ]]; then 
-        default_browser="google-chrome.desktop"
-    elif [[ $distro_id == "CentOS" ]]; then 
-        default_browser="google-chrome.desktop"              
-    else
+    if [[ $distro_id == "Ubuntu" ]] && [[ $distro_release == "16.04" ]]; then
         default_browser="firefox-esr.desktop"
+    else
+        default_browser="google-chrome.desktop"
     fi
 
     # * Associate VLC with .mkv
@@ -60,17 +56,12 @@ set_default_applications() {
 lock_down_desktop_environment() {
     trap die_with_error ERR
 
-    if [[ $distro_id == "Ubuntu" ]] && [[ $distro_release == "16.04" ]]; then
-        ${gsettings_preamble} gsettings set com.canonical.Unity.Launcher favorites "['application://${default_browser}', 'application://firefox-esr.desktop', 'application://nautilus.desktop', 'application://vlc.desktop', 'application://teamviewer.desktop']"        
-        #${gsettings_preamble} gsettings set org.gnome.shell favorite-apps "['${default_browser}', 'firefox-esr.desktop', 'nautilus.desktop', 'vlc.desktop', 'teamviewer.desktop']" 
-        
-    elif [[ $distro_id == "Ubuntu" ]] && [[ $distro_release == "18.04" ]]; then
-        ${gsettings_preamble} gsettings set org.gnome.shell favorite-apps "['${default_browser}', 'firefox-esr.desktop', 'nautilus.desktop', 'vlc.desktop', 'teamviewer.desktop']"        
+    if [[ $distro_id == "Ubuntu" ]]; then
+        ${gsettings_preamble} gsettings set com.canonical.Unity.Launcher favorites "['application://${default_browser}', 'application://nautilus.desktop', 'application://vlc.desktop', 'application://teamviewer.desktop', 'unity://running-apps', 'unity://expo-icon', 'unity://devices']"
 
     elif [[ $distro_id == "CentOS" ]] || [[ $distro_id == "RedHatEnterpriseServer" ]]; then
         # Disable locking the screen 
         ${gsettings_preamble} gsettings set org.gnome.desktop.lockdown disable-lock-screen true
-        #gsettings set org.gnome.desktop.screensaver lock-enabled false ##18.04
 
         # Don't show notifications when logged out
         ${gsettings_preamble} gsettings set org.gnome.desktop.notifications show-in-lock-screen false
@@ -86,7 +77,7 @@ lock_down_desktop_environment() {
         # Put some links on the Desktop 
         # Nautilus link
         chmod 755 ~/Desktop
-    
+	
         if [[ -f /usr/share/applications/nautilus.desktop ]]; then
             cp /usr/share/applications/nautilus.desktop ~/Desktop 
         else
@@ -172,6 +163,22 @@ reset_chrome34_prefs() {
     cp /usr/share/applications/google-chrome.desktop ~/.config/autostart/
 }
 
+reset_firefox_esr_prefs() {
+    trap die_with_error ERR
+
+    sudo sed -i '/.*("browser.startup.homepage", ".*");/d' /etc/firefox-esr/firefox-esr.js
+    sudo sed -i '/.*("browser.startup.homepage_override.mstone", ".*");/d' /etc/firefox-esr/firefox-esr.js
+    sudo sed -i '/.*("dom.disable_open_during_load",  .*);/d' /etc/firefox-esr/firefox-esr.js
+
+    echo 'lockPref("browser.startup.homepage", "http://localhost");' | sudo tee -a /etc/firefox-esr/firefox-esr.js > /dev/null
+    echo 'lockPref("browser.startup.homepage_override.mstone", "ignore");' | sudo tee -a /etc/firefox-esr/firefox-esr.js > /dev/null
+    echo 'lockPref("dom.disable_open_during_load",  false);' | sudo tee -a /etc/firefox-esr/firefox-esr.js > /dev/null
+
+    # Make Firefox ESR start on login.
+    mkdir -p ~/.config/autostart
+    cp /usr/share/applications/firefox-esr.desktop ~/.config/autostart/
+}
+
 setup_desktop() {
     trap die_with_error ERR
 
@@ -191,7 +198,6 @@ setup_desktop() {
 
     rm -f ~/Downloads/*
     rm -f ~/*.jpg ~/*.mkv ~/*.deb
-    ##rm -f /usr/share/unity-greeter/logo.png
     chmod 444 ~/Desktop/*.pdf
     chmod 555 ~/Desktop
 
@@ -213,7 +219,7 @@ setup_desktop() {
 
     if [[ $distro_id == "Ubuntu" ]]; then
         ${gsettings_preamble} gsettings set org.gnome.desktop.background draw-background true
-    fi  
+    fi
 }
 
 verify_steelfin_os
@@ -222,9 +228,8 @@ set_default_applications
 lock_down_desktop_environment
 if [[ $default_browser == "google-chrome.desktop" ]]; then
     reset_chrome34_prefs
-    #reset_firefox_esr_prefs
-# elif [[ $default_browser == "firefox-esr.desktop" ]]; then
-#     reset_firefox_esr_prefs
+elif [[ $default_browser == "firefox-esr.desktop" ]]; then
+    reset_firefox_esr_prefs
 fi
 setup_desktop
 

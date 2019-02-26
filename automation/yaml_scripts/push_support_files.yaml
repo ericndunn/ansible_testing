@@ -1,10 +1,10 @@
 ---
 ## Match hosts to hosts file /etc/ansible/hosts
-- hosts: "targetserver"
+- hosts: "orchids"
 
 ## Variables
   vars:
-    src_dir: /var/ftp/pub/steelfin/serial
+    src_dir: /home/orchid/steelfin/serial
     vpn_scripts_dir: /home/orchid/vpn_scripts     
     dest_dir: /home/orchid/Desktop
     ticket_num: "{{ lookup('env', 'TICKET_NUM') }}"
@@ -16,21 +16,6 @@
   gather_facts: true
 
   tasks:
-
-    # - name: Ansible delete file glob
-    #   find:
-    #     paths: /home/orchid/Desktop/
-    #     patterns: 
-    #       - orchid*.pdf 
-    #       - steelfin*.pdf
-    #   register: files_to_delete
-
-    # - name: Ansible remove file glob
-    #   file:
-    #     path: "{{ item.path }}"
-    #     state: absent
-    #   with_items: "{{ files_to_delete.files }}"
-    #   become: true
 
     - name: Delete all support and warranty pdfs
       shell: "rm -rf {{ dest_dir }}/orchid*.pdf {{ dest_dir }}/steelfin*.pdf"

@@ -18,7 +18,6 @@
         steelfin_user_sudo: true
         steelfin_teamviewer: true
 #    - customers/mcdonalds-usa
-    - { role: customers/mcdonalds-usa, when: job_name == 'mcdonalds' }
     - role: apt-mirror
       vars:
         apt_mirror: "us.archive.ubuntu.com"

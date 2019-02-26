@@ -68,13 +68,13 @@ usage() {
     echo "configuring a software RAID (as necessary), installing IPConfigure/Orchid "
     echo "branding, and the Orchid Core installer."
     echo
-    echo " SERIAL - IPConfigure SteelFin server serial number"
+	echo " SERIAL - IPConfigure SteelFin server serial number"
     echo "   MODE - Specify how to configure the server's /orchive directory.  This value"
     echo "          must be one of the following:"
     echo 
     echo "          UPDATE: Update to the latest version of this script from Github."
     echo "           RAID0: Configure all hard drives >= 1TB as a software RAID 0"
-    echo "                  device /dev/md125 mounted at /orchives."
+    echo "                  device /dev/md127 mounted at /orchives."
     echo "           RAID1: As above, but RAID1."
     echo "           RAID5: As above, but RAID5."
     echo "           RAID6: As above, but RAID6."
@@ -90,7 +90,7 @@ usage() {
 
 # Verify that the command line parameters are syntactically valid.
 verify_cmdline_parameters() {
-    serial="$1"
+	serial="$1"
     mode="$2"
     valid_modes=( "RAID0" "RAID1" "RAID5" "RAID6" "NORAID" "HWRAID" "UPDATE" )
 
@@ -175,102 +175,75 @@ script_update() {
 install_orchid_prereqs() {
     trap die_with_error ERR
 
-    if [[ $distro_id == "Ubuntu" ]] && [[ $distro_release == "16.04" ]]; then
-        # Install preseed answers for Debian packages
-        preseeds=$( write_var_to_tmp "${inline_file[debian_preseeds]}" )
-        debconf-set-selections ${preseeds}
-        rm -f ${preseeds}
-
-        # * Install VLC and SSH
-        apt-get update
-        apt-get -y upgrade
-        apt-get -y install vlc expect gdebi ssh jq mdadm smartmontools zenity curl wget
-        # Install the HWE kernel on 16.04 to support the 2nd NIC on H370N0-WIFI motherboards
-        apt-get -y install --install-recommends linux-generic-hwe-16.04 xserver-xorg-hwe-16.04
-    elif [[ $distro_id == "Ubuntu" ]] && [[ $distro_release == "14.04" ]]; then
-        # Install preseed answers for Debian packages
-        preseeds=$( write_var_to_tmp "${inline_file[debian_preseeds]}" )
-        debconf-set-selections ${preseeds}
-        rm -f ${preseeds}
-
-        # * Install VLC and SSH
-        apt-get update
-        apt-get -y upgrade
-        apt-get -y install vlc expect gdebi ssh jq mdadm smartmontools zenity curl wget
-    elif [[ $distro_id == "Ubuntu" ]] && [[ $distro_release == "18.04" ]]; then
-        # Install preseed answers for Debian packages
-        preseeds=$( write_var_to_tmp "${inline_file[debian_preseeds]}" )
-        debconf-set-selections ${preseeds}
-        rm -f ${preseeds}
-
-        # * Install VLC and SSH
-        apt-get -y remove gdm3
-        apt-get -y update
-        apt-get -y upgrade
-        apt-get -y install vlc expect gdebi ssh jq mdadm smartmontools zenity curl wget unity lightdm
-        # Install the HWE kernel on 16.04 to support the 2nd NIC on H370N0-WIFI motherboards
-        apt-get -y install --install-recommends linux-generic-hwe-16.04 xserver-xorg-hwe-16.04
-        # service gdm stop
-        # service lightdm stop
-        # service lightdm start             
-    else 
-        # PackageKit on CentOS will block RPM (seemingly forever) while you're trying to
-        # manually install packages.  Kill it.
-        systemctl stop packagekit.service 
-
-        # Install script prereqs
-        yum -y install epel-release
-        rpm -Uvh --force http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-1.el7.nux.noarch.rpm
-        yum -y update
-        yum -y install tbb postgresql-libs vlc expect jq mdadm lsb curl libXScrnSaver.x86_64 hdparm
-    fi
+#    if [[ $distro_id == "Ubuntu" ]]; then
+#        # Install preseed answers for Debian packages
+#        preseeds=$( write_var_to_tmp "${inline_file[debian_preseeds]}" )
+#        debconf-set-selections ${preseeds}
+#        rm -f ${preseeds}
+#
+#        # * Install VLC and SSH
+#        apt-get update
+#        apt-get -y upgrade
+#        apt-get -y install vlc expect gdebi ssh jq mdadm smartmontools zenity curl
+#
+#        # Install the HWE kernel on 16.04 to support the 2nd NIC on H370N0-WIFI motherboards
+#        if [[ $distro_release == "16.04" ]]; then
+#            sudo apt-get -y install --install-recommends linux-generic-hwe-16.04 xserver-xorg-hwe-16.04 
+#        fi
+#    else 
+#        # PackageKit on CentOS will block RPM (seemingly forever) while you're trying to
+#        # manually install packages.  Kill it.
+#        systemctl stop packagekit.service 
+#
+#        # Install script prereqs
+#        yum -y install epel-release
+#        rpm -Uvh --force http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-1.el7.nux.noarch.rpm
+#        yum -y update
+#        yum -y install tbb postgresql-libs vlc expect jq mdadm lsb curl libXScrnSaver.x86_64 hdparm
+#    fi
 
 }
 
 # Download Orchid from the website (if required), and validate it against an MD5 hash.
 download_orchid() {
-    # If ORCHID_VERSION is specified as an environment variable, use it.  Otherwise,
-    # use the version that the website reports as LATEST.
-    orchid_version=$ORCHID_VERSION
-    if [[ -z $orchid_version ]]; then
-        orchid_version=$(curl -s "https://download.ipconfigure.com/orchid/LATEST")
-    fi
-
-    if [[ $distro_id == "Ubuntu" ]] && [[ $distro_release == "16.04" ]]; then
-        pkg_ext="-jessie"
-    elif [[ $distro_id == "Ubuntu" ]] && [[ $distro_release == "18.04" ]]; then
-        pkg_ext="-bionic"
-    elif [[ $distro_id == "Ubuntu" ]] && [[ $distro_release == "14.04" ]]; then
-        pkg_ext=""                
-    fi
-
-    # Verify we have the latest Orchid installer
-    orchid_pkg="ipc-orchid-x86_64_${orchid_version}${pkg_ext}.${pkg_type}"
-    if [[ ! -f ${orchid_install_dir}/${orchid_pkg} ]]; then
-        rm -f ${orchid_install_dir}/ipc-orchid-x86_64_*.${pkg_type}
-            
-        # Download installer
-        if ! wget -O ${orchid_install_dir}/${orchid_pkg} \
-                  https://download.ipconfigure.com/orchid/${orchid_pkg} ; then
-            die_with_error "COULD NOT DOWNLOAD ORCHID INSTALLER"
-        fi
-
-        # Download checksum
-        if ! wget -O ${orchid_install_dir}/${orchid_pkg}.md5 \
-                  https://download.ipconfigure.com/orchid/${orchid_pkg}.md5 ; then
-            die_with_error "COULD NOT DOWNLOAD ORCHID INSTALLER MD5 HASH"
-        fi
-        
-    fi
-
-    # Verify checksum
-    pushd . > /dev/null ; cd ${orchid_install_dir}
-    if ! md5sum -c ${orchid_pkg}.md5 &> /dev/null ; then
-        rm -f ${orchid_install_dir}/${orchid_pkg}
-        rm -f ${orchid_install_dir}/${orchid_pkg}.md5
-        die_with_error "DOWNLOADED ORCHID INSTALLER FAILED MD5 HASH"
-    fi
-    popd > /dev/null
+#    # If ORCHID_VERSION is specified as an environment variable, use it.  Otherwise,
+#    # use the version that the website reports as LATEST.
+#    orchid_version=$ORCHID_VERSION
+#    if [[ -z $orchid_version ]]; then
+#        orchid_version=$(curl -s "http://192.168.100.205/orchid/LATEST")
+#    fi
+#
+#    if [[ $distro_id == "Ubuntu" ]] && [[ $distro_release == "16.04" ]]; then
+#        pkg_ext="-jessie"
+#    fi
+#
+#    # Verify we have the latest Orchid installer
+#    orchid_pkg="ipc-orchid-x86_64_${orchid_version}${pkg_ext}.${pkg_type}"
+#    if [[ ! -f ${orchid_install_dir}/${orchid_pkg} ]]; then
+#        rm -f ${orchid_install_dir}/ipc-orchid-x86_64_*.${pkg_type}
+#            
+#        # Download installer
+#        if ! wget -O ${orchid_install_dir}/${orchid_pkg} \
+#                  http://192.168.100.205/orchid/${orchid_pkg} ; then
+#            die_with_error "COULD NOT DOWNLOAD ORCHID INSTALLER"
+#        fi
+#
+#        # Download checksum
+#        if ! wget -O ${orchid_install_dir}/${orchid_pkg}.md5 \
+#                  http://192.168.100.205/orchid/${orchid_pkg}.md5 ; then
+#            die_with_error "COULD NOT DOWNLOAD ORCHID INSTALLER MD5 HASH"
+#        fi
+#        
+#    fi
+#
+#    # Verify checksum
+#    pushd . > /dev/null ; cd ${orchid_install_dir}
+#    if ! md5sum -c ${orchid_pkg}.md5 &> /dev/null ; then
+#        rm -f ${orchid_install_dir}/${orchid_pkg}
+#        rm -f ${orchid_install_dir}/${orchid_pkg}.md5
+#        die_with_error "DOWNLOADED ORCHID INSTALLER FAILED MD5 HASH"
+#    fi
+#    popd > /dev/null
 }
 
 install_browser() {
@@ -302,30 +275,12 @@ install_browser() {
             apt-mark hold libnss3
             apt-mark hold libnss3-tools
 
-        elif [[ $distro_release == "16.04" ]] || [[ $distro_release == "18.04" ]]; then
+        elif [[ $distro_release == "16.04" ]]; then
             add-apt-repository -y ppa:jonathonf/firefox-esr-52
             apt-get update
             apt-get -y install firefox-esr
 
-            # Firefox ESR settings are set at the OS level.
-            sed -i '/.*("browser.startup.homepage", ".*");/d' /etc/firefox-esr/firefox-esr.js
-            sed -i '/.*("browser.startup.homepage_override.mstone", ".*");/d' /etc/firefox-esr/firefox-esr.js
-            sed -i '/.*("dom.disable_open_during_load",  .*);/d' /etc/firefox-esr/firefox-esr.js
-
-            echo 'lockPref("browser.startup.homepage", "http://localhost");' | tee -a /etc/firefox-esr/firefox-esr.js > /dev/null
-            echo 'lockPref("browser.startup.homepage_override.mstone", "ignore");' | tee -a /etc/firefox-esr/firefox-esr.js > /dev/null
-            echo 'lockPref("dom.disable_open_during_load",  false);' | tee -a /etc/firefox-esr/firefox-esr.js > /dev/null
-
-            # Manually specify LD_LIBRARY_PATH for FBGST in Firefox ESR
-            sed -i 's#^Exec.*#Exec=env LD_LIBRARY_PATH=/opt/fbgst/lib /usr/lib/firefox-esr/firefox-esr %u#' /usr/share/applications/firefox-esr.desktop
-
-
             apt-mark hold firefox-esr
-            # Install Chrome
-            wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - 
-            sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
-            apt-get -y update
-            apt-get -y install google-chrome-stable            
         else
             die_with_error "ERROR: Unknown \$distro_release: $distro_release"
         fi
@@ -459,80 +414,80 @@ stop_orchid_and_unmount_orchives() {
 setup_software_raid() {
     trap die_with_error ERR
 
-    stop_orchid_and_unmount_orchives
+#    stop_orchid_and_unmount_orchives
 
-    # Kill existing RAID (if it exists).
-    for device in $(/bin/ls /dev/md*); do
-        echo Killing $device
-        # "Best effort" stop the RAID.
-        trap ERR
-        mdadm --stop $device
-        mdadm --remove $device
-        trap die_with_error ERR
-    done
+#    # Kill existing RAID (if it exists).
+#    for device in $(/bin/ls /dev/md*); do
+#        echo Killing $device
+#        # "Best effort" stop the RAID.
+#        trap ERR
+#        mdadm --stop $device
+#        mdadm --remove $device
+#        trap die_with_error ERR
+#    done
 
-    # If raid_parts weren't specified on the command line, we'll build them here by
-    # assuming any block device >=1TB should be in the RAID.
-    raid_devs=()
-    if [[ ${#raid_parts[@]} -eq 0 ]]; then
-        # Automatically choose RAID drives/partitions    
-        raid_parts=()
-
-        # Assume anything greater than 900GB should be a RAID member.  Size below is in bytes.
-        raid_size_threshold=$(( 900 * 2**30 ))
-        for device in $(/bin/ls /dev/sd?); do 
-            if [[ $(blockdev --getsize64 "$device") -gt $raid_size_threshold ]]; then 
-                raid_devs+=("$device")
-                raid_parts+=("${device}")
-            fi
-        done
-
-        # Reformat the >1TB drives (assume these will be in the RAID).
-        for device in ${raid_devs[@]}; do
-            # Clear RAID metadata
-            dd if=/dev/zero of=$device bs=512 seek=$(( $(blockdev --getsz $device) - 1024 )) count=1024
-            dd if=/dev/zero of=$device bs=1M count=10
-            mdadm --zero-superblock --force ${device}
-        done
-    fi
-
-    # Rebuild array.
-    mdadm --create --verbose /dev/md125 --assume-clean --level=${raid_level} --raid-devices=${#raid_parts[@]} ${raid_parts[@]}
-
-    # Create ext4 filesystem on new array.
-    mkfs.ext4 -m 0 /dev/md125
-
-    # Set the array to start automatically.
-    cp ${mdadm_conf} ${mdadm_conf}.bak
-    cat ${mdadm_conf}.bak | sed '/ARRAY/d' > ${mdadm_conf}
-    mdadm --detail --scan >> ${mdadm_conf}
-    update-initramfs -u
+#    # If raid_parts weren't specified on the command line, we'll build them here by
+#    # assuming any block device >=1TB should be in the RAID.
+#    raid_devs=()
+#    if [[ ${#raid_parts[@]} -eq 0 ]]; then
+#        # Automatically choose RAID drives/partitions    
+#        raid_parts=()
+#
+#        # Assume anything greater than 900GB should be a RAID member.  Size below is in bytes.
+#        raid_size_threshold=$(( 900 * 2**30 ))
+#        for device in $(/bin/ls /dev/sd?); do 
+#            if [[ $(blockdev --getsize64 "$device") -gt $raid_size_threshold ]]; then 
+#                raid_devs+=("$device")
+#                raid_parts+=("${device}")
+#            fi
+#        done
+#
+#        # Reformat the >1TB drives (assume these will be in the RAID).
+#        for device in ${raid_devs[@]}; do
+#            # Clear RAID metadata
+#            dd if=/dev/zero of=$device bs=512 seek=$(( $(blockdev --getsz $device) - 1024 )) count=1024
+#            dd if=/dev/zero of=$device bs=1M count=10
+#            mdadm --zero-superblock --force ${device}
+#        done
+#    fi
+#
+#    # Rebuild array.
+#    mdadm --create --verbose /dev/md127 --assume-clean --level=${raid_level} --raid-devices=${#raid_parts[@]} ${raid_parts[@]}
+#
+#    # Create ext4 filesystem on new array.
+#    mkfs.ext4 -m 0 /dev/md127
+#
+#    # Set the array to start automatically.
+#    cp ${mdadm_conf} ${mdadm_conf}.bak
+#    cat ${mdadm_conf}.bak | sed '/ARRAY/d' > ${mdadm_conf}
+#    mdadm --detail --scan >> ${mdadm_conf}
+#    update-initramfs -u
 
     # Verify our /orchives partition auto-mounts and is reasonably sized.
-    set_orchives_fstab_and_verify "/dev/md125"
+#    set_orchives_fstab_and_verify "/dev/md127"
 
-    # Configure RAID monitoring
-    write_raid_monitor_script /usr/local/bin/orchid_raid_notify.sh
-    sed -i '/MAILFROM.*/d' ${mdadm_conf}
-    sed -i '/MAILADDR.*/d' ${mdadm_conf}
-    sed -i '/PROGRAM.*/d' ${mdadm_conf}
-    echo 'PROGRAM /usr/local/bin/orchid_raid_notify.sh' \
-        >> ${mdadm_conf}
+#    # Configure RAID monitoring
+#    #write_raid_monitor_script /usr/local/bin/orchid_raid_notify.sh
+#    sed -i '/MAILFROM.*/d' ${mdadm_conf}
+#    sed -i '/MAILADDR.*/d' ${mdadm_conf}
+#    sed -i '/PROGRAM.*/d' ${mdadm_conf}
+#    echo 'PROGRAM /usr/local/bin/orchid_raid_notify.sh' \
+#        >> ${mdadm_conf}
 
     # Add minutely cronjob to run RAID monitor tool
-    crontab -l \
-        | sed '/.*orchid_raid_notify.sh.*/d' \
-        | printf "* * * * * /sbin/mdadm --monitor --scan --oneshot\n" \
-        | crontab -
+#    crontab -l \
+#        | sed '/.*orchid_raid_notify.sh.*/d' \
+#        | printf "* * * * * /sbin/mdadm --monitor --scan --oneshot\n" \
+#        | crontab -
 
     # Set up a reasonable RAID rebuild speed.  By default,
     # the minimum RAID rebuild speed is very fast and will
     # choke Orchid.  We want the automatic rebuild speed
     # pretty slow.  If you're manually rebuilding, you can 
     # override this with systctl -w dev.raid.speed_limit_max=whatever
-    sed -i '/dev.raid.speed_limit_max.*/d' /etc/sysctl.conf
-    echo "dev.raid.speed_limit_max = 50000" >> /etc/sysctl.conf
-    sysctl -p
+#    sed -i '/dev.raid.speed_limit_max.*/d' /etc/sysctl.conf
+#    echo "dev.raid.speed_limit_max = 50000" >> /etc/sysctl.conf
+#    sysctl -p
 }
 
 # Setup a hardware RAID.  Assume that volume has already been initialized in the RAID BIOS.
@@ -602,7 +557,7 @@ install_package() {
 install_orchid() {
     trap die_with_error ERR
     
-    install_package "${orchid_install_dir}/${orchid_pkg}"
+#    install_package "${orchid_install_dir}/${orchid_pkg}"
 
     fbgst_pkg=$(find /opt/orchid/share/orchid-html/ | grep -E "FBGST_[.0-9]+.${pkg_type}$")
     if [[ ! -f $fbgst_pkg ]]; then
@@ -611,32 +566,27 @@ install_orchid() {
 
     install_package "${fbgst_pkg}"
 
-    if [[ $distro_id == "Ubuntu" ]] && [[ $distro_release == "18.04" ]]; then
-        rm -f /etc/ld.so.conf.d/fbgst.conf
-        ldconfig
-    fi
-
-    # Red Hat requires some manual installation steps.
-    if [[ $distro_id == "RedHatEnterpriseServer" ]] || [[ $distro_id == "CentOS" ]]; then
-        cp /opt/orchid/orchid_server.properties.default /etc/opt/orchid_server.properties
-        
-        # Set some Orchid properties (remove them first in case they exist)
-        sed -i '/orchid.admin.password =.*/d'  /etc/opt/orchid_server.properties
-        sed -i '/rtsp.rtp_port.* =.*/d' /etc/opt/orchid_server.properties
-
-        echo 'orchid.admin.password = 0rc#1d' >> /etc/opt/orchid_server.properties
-        echo 'rtsp.rtp_port_range.min = 40000' >> /etc/opt/orchid_server.properties
-        echo 'rtsp.rtp_port_range.min = 50000' >> /etc/opt/orchid_server.properties
-
-        sed -i '/archives.dir =.*/d'  /etc/opt/orchid_server.properties
-        echo 'archives.dir = /orchives' >> /etc/opt/orchid_server.properties
-        
-        # Enable and Start orchid services
-        systemctl enable orchid.service
-        systemctl enable orchid_onvif_autodiscovery.service
-        systemctl start orchid.service
-        systemctl start orchid_onvif_autodiscovery.service
-    fi
+#    # Red Hat requires some manual installation steps.
+#    if [[ $distro_id == "RedHatEnterpriseServer" ]] || [[ $distro_id == "CentOS" ]]; then
+#        cp /opt/orchid/orchid_server.properties.default /etc/opt/orchid_server.properties
+#        
+#        # Set some Orchid properties (remove them first in case they exist)
+#        sed -i '/orchid.admin.password =.*/d'  /etc/opt/orchid_server.properties
+#        sed -i '/rtsp.rtp_port.* =.*/d' /etc/opt/orchid_server.properties
+#
+#        echo 'orchid.admin.password = 0rc#1d' >> /etc/opt/orchid_server.properties
+#        echo 'rtsp.rtp_port_range.min = 40000' >> /etc/opt/orchid_server.properties
+#        echo 'rtsp.rtp_port_range.min = 50000' >> /etc/opt/orchid_server.properties
+#
+#        sed -i '/archives.dir =.*/d'  /etc/opt/orchid_server.properties
+#        echo 'archives.dir = /orchives' >> /etc/opt/orchid_server.properties
+#        
+#        # Enable and Start orchid services
+#        systemctl enable orchid.service
+#        systemctl enable orchid_onvif_autodiscovery.service
+#        systemctl start orchid.service
+#        systemctl start orchid_onvif_autodiscovery.service
+#    fi
 
     if [[ $mode == "SWRAID" ]] || [[ $mode == "HWRAID" ]]; then
         sed -i '/^archivecleaner.usedspace.percentage = .*/d' /etc/opt/orchid_server.properties
@@ -731,7 +681,6 @@ EOF
         cp ${orchid_install_dir}/orchid_background_blank.png \
             /usr/share/gnome-shell/theme/noise-texture.png
         cp ${orchid_install_dir}/poweredby_ipconfigure.svg /usr/share/pixmaps/
-        mkdir /etc/dconf/db/gdm.d
         cp ${orchid_install_dir}/redhat/etc/dconf/db/gdm.d/01-logo /etc/dconf/db/gdm.d/01-logo
         cp ${orchid_install_dir}/redhat/etc/dconf/profile/gdm /etc/dconf/profile/gdm
         dconf update
@@ -753,7 +702,7 @@ write_raid_monitor_script() {
     cat << EOF > "$1"
 #!/bin/bash
 
-raid_device=/dev/md125
+raid_device=/dev/md127
 
 notify_all() {
     if [[ -f /etc/redhat-release ]]; then
@@ -852,7 +801,7 @@ if [[ -z $IPC_CONFIG_SCRIPT_RAID_ONLY ]]; then
     install_teamviewer
 fi
 
-    setup_serial_number
+	setup_serial_number
 
 if [[ $mode == "SWRAID" ]]; then
     setup_software_raid

@@ -116,24 +116,6 @@ MENU BEGIN ubuntu-16.04-submenu
 		KERNEL ubuntu1604/amd64/linux
 		APPEND vga=788 initrd=ubuntu1604/amd64/initrd.gz live-installer/net-image=ftp://192.168.102.42/pub/ubuntu1604/install/filesystem.squashfs ks=ftp://192.168.102.42/pub/repos/integrations/automation/kickseed/ubuntu1604.ks.cfg	
 
-	LABEL 3.2
-		#MENU PASSWD Mypassword
-		MENU LABEL Ubuntu-16.04 (Kickscript) RAID1 BOOT DISKS
-		KERNEL ubuntu1604/amd64/linux
-		APPEND vga=788 initrd=ubuntu1604/amd64/initrd.gz live-installer/net-image=ftp://192.168.102.42/pub/ubuntu1604/install/filesystem.squashfs ks=ftp://192.168.102.42/pub/repos/integrations/automation/kickseed/2ssd_raid1_ubuntu1604.ks.cfg
-
-	#LABEL 3.3
-	#    #MENU PASSWD Mypassword
-	#	MENU LABEL Ubuntu-16.04 Software RAID1
-	#	KERNEL ubuntu1604/amd64/linux
-	#	APPEND vga=788 initrd=ubuntu1604/amd64/initrd.gz live-installer/net-image=ftp://192.168.102.42/pub/ubuntu1604/install/filesystem.squashfs ks=ftp://192.168.102.42/pub/repos/integrations/automation/kickseed/raid1_ubuntu1604.ks.cfg
-
-	#LABEL 3.4
-	#    #MENU PASSWD Mypassword
-    #	MENU LABEL Ubuntu-16.04 Software RAID5
-	#	KERNEL ubuntu1604/amd64/linux
-	#	APPEND vga=788 initrd=ubuntu1604/amd64/initrd.gz live-installer/net-image=ftp://192.168.102.42/pub/ubuntu1604/install/filesystem.squashfs ks=ftp://192.168.102.42/pub/repos/integrations/automation/kickseed/raid5_ubuntu1604.ks.cfg								
-
 MENU END
 ################################## UBUNTU 18.04 #################################################
 MENU BEGIN ubuntu-18.04-submenu
@@ -152,93 +134,6 @@ MENU BEGIN ubuntu-18.04-submenu
 		MENU DEFAULT
 		KERNEL ubuntu1804/amd64/linux
 		APPEND vga=788 initrd=ubuntu1804/amd64/initrd.gz live-installer/net-image=ftp://192.168.102.42/pub/ubuntu1804/install/filesystem.squashfs ks=ftp://192.168.102.42/pub/repos/integrations/automation/kickseed/ubuntu1804.ks.cfg	
-
-MENU END
-################################### TESTING ################################################
-MENU BEGIN testing-submenu
-    MENU TITLE Testing PXE Boot
-
-    LABEL empty
-		MENU LABEL Ubuntu-18.04    
-
-	LABEL 0.x
-		#MENU PASSWD Mypassword
-		MENU LABEL Ubuntu-18.04 PULL (Kickscript) SINGLE BOOT DISK
-		MENU DEFAULT
-		KERNEL ubuntu1804/amd64/linux
-		APPEND vga=788 initrd=ubuntu1804/amd64/initrd.gz live-installer/net-image=ftp://192.168.102.42/pub/ubuntu1804/install/filesystem.squashfs ks=ftp://192.168.102.42/pub/repos/integrations/automation/kickseed/ubuntu1804.pull.ks.cfg    
-
-    LABEL empty
-		MENU LABEL Ubuntu-16.04  
-
-	LABEL 0.1
-	    #MENU PASSWD Mypassword
-		MENU LABEL TEST: Ubuntu-16.04 - RAID0 TEST
-		KERNEL ubuntu1604/amd64/linux
-		APPEND vga=788 initrd=ubuntu1604/amd64/initrd.gz live-installer/net-image=ftp://192.168.102.42/pub/ubuntu1604/install/filesystem.squashfs ks=ftp://192.168.102.42/pub/repos/integrations/automation/TEST_raid0_ubuntu1604.ks.cfg
-
-	LABEL 0.2
-	    #MENU PASSWD Mypassword
-		MENU LABEL TEST: Ubuntu-16.04 - RAID1 TEST
-		KERNEL ubuntu1604/amd64/linux
-		APPEND vga=788 initrd=ubuntu1604/amd64/initrd.gz live-installer/net-image=ftp://192.168.102.42/pub/ubuntu1604/install/filesystem.squashfs ks=ftp://192.168.102.42/pub/repos/integrations/automation/TEST_raid1_ubuntu1604.ks.cfg
-
-	LABEL 0.3
-	    #MENU PASSWD Mypassword
-		MENU LABEL TEST: Ubuntu-16.04 - RAID5 TEST
-		KERNEL ubuntu1604/amd64/linux
-		APPEND vga=788 initrd=ubuntu1604/amd64/initrd.gz live-installer/net-image=ftp://192.168.102.42/pub/ubuntu1604/install/filesystem.squashfs ks=ftp://192.168.102.42/pub/repos/integrations/automation/TEST_raid5_ubuntu1604.ks.cfg
-
-	LABEL 0.4
-	    #MENU PASSWD Mypassword
-		MENU LABEL TEST: Ubuntu-16.04 (KS) 2 SSDs RAID1 TEST
-		KERNEL ubuntu1604/amd64/linux
-		APPEND vga=788 initrd=ubuntu1604/amd64/initrd.gz live-installer/net-image=ftp://192.168.102.42/pub/ubuntu1604/install/filesystem.squashfs ks=ftp://192.168.102.42/pub/repos/integrations/automation/TEST_2ssd_raid1_ubuntu1604.ks.cfg
-
-    LABEL empty
-		MENU LABEL Ubuntu-14.04		
-
-	LABEL 0.5
-	    #MENU PASSWD Mypassword
-		MENU LABEL TEST: Ubuntu-14.04 - RAID0 TEST
-		KERNEL ubuntu1404/amd64/linux
-		APPEND vga=788 initrd=ubuntu1404/amd64/initrd.gz live-installer/net-image=ftp://192.168.102.42/pub/ubuntu1404/install/filesystem.squashfs ks=ftp://192.168.102.42/pub/repos/integrations/automation/TEST_raid0_ubuntu1404.ks.cfg
-
-	LABEL 0.6
-	    #MENU PASSWD Mypassword
-		MENU LABEL TEST: Ubuntu-14.04 - RAID1 TEST
-		KERNEL ubuntu1404/amd64/linux
-		APPEND vga=788 initrd=ubuntu1404/amd64/initrd.gz live-installer/net-image=ftp://192.168.102.42/pub/ubuntu1404/install/filesystem.squashfs ks=ftp://192.168.102.42/pub/repos/integrations/automation/TEST_raid1_ubuntu1404.ks.cfg
-
-	LABEL 0.7
-	    #MENU PASSWD Mypassword
-		MENU LABEL TEST: Ubuntu-14.04 - RAID5 TEST
-		KERNEL ubuntu1404/amd64/linux
-		APPEND vga=788 initrd=ubuntu1404/amd64/initrd.gz live-installer/net-image=ftp://192.168.102.42/pub/ubuntu1404/install/filesystem.squashfs ks=ftp://192.168.102.42/pub/repos/integrations/automation/TEST_raid5_ubuntu1404.ks.cfg
-
-    LABEL empty
-		MENU LABEL CentOS-7		
-
-	LABEL 0.8
-	    #MENU PASSWD Mypassword
-		MENU LABEL TEST: CentOS-7 - RAID0 TEST
-		KERNEL centos7/vmlinuz
-		APPEND initrd=centos7/initrd.img inst.repo=ftp://192.168.102.42/pub/centos7 ks=ftp://192.168.102.42/pub/repos/integrations/automation/TEST_raid0_centos7.ks.cfg
-
-	LABEL 0.9
-	    #MENU PASSWD Mypassword
-		MENU LABEL TEST: CentOS-7 - RAID1 TEST
-		KERNEL centos7/vmlinuz
-		APPEND initrd=centos7/initrd.img inst.repo=ftp://192.168.102.42/pub/centos7 ks=ftp://192.168.102.42/pub/repos/integrations/automation/TEST_raid1_centos7.ks.cfg
-
-	LABEL 0.10
-	    #MENU PASSWD Mypassword
-		MENU LABEL TEST: CentOS-7 - RAID5 TEST
-		KERNEL centos7/vmlinuz
-		APPEND initrd=centos7/initrd.img inst.repo=ftp://192.168.102.42/pub/centos7 ks=ftp://192.168.102.42/pub/repos/integrations/automation/TEST_raid5_centos7.ks.cfg
-
-    LABEL empty
-		MENU LABEL			
 
 MENU END
 ###################################################################################
