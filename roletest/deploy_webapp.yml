@@ -1,0 +1,9 @@
+---
+- hosts: "dev2"
+  gather_facts: true
+  roles:
+     - deployspa
+
+
+
+  
