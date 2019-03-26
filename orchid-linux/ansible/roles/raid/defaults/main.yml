@@ -1,5 +1,0 @@
-steelfin_raid_type: 'mdadm'
-steelfin_raid_level: '5'
-steelfin_raid_device: '/dev/md125'
-steelfin_raid_min_disk_size: "{{ 500 * 2 | pow(30) }}"
-steelfin_raid_mount_point: '/orchives'

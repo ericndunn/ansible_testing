@@ -1,5 +1,0 @@
-#!/bin/bash
-
-echo "{{ mcdonalds_orchid_password }}" | gnome-keyring-daemon --unlock || true &> /dev/null
-/usr/bin/python -c "import gnomekeyring;gnomekeyring.change_password_sync('login', '{{ mcdonalds_orchid_password }}', '');" || true &> /dev/null
-rm ~/.local/share/keyrings/login.keyring || true &> /de/null

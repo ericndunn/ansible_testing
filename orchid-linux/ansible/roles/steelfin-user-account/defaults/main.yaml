@@ -1,9 +1,0 @@
-steelfin_user_account: 'orchid'
-# To generate a new password, use `mkpasswd -m sha-512`
-steelfin_user_password: '$6$dllZfu9nPtHbVH8$LRaeMFVlIym6MD8ytUtVAVKITAsjXGmX5Gxrqw0Fh/zv.RYN2Z592vN8DvfDFBcZRzUx/YkqfUg7Wx7U24Jjj0'
-steelfin_user_sudo: true
-steelfin_default_browser: 'google-chrome'
-steelfin_sudoers_group: 'sudo'
-steelfin_teamviewer: false
-teamviewer_unity_link: ""
-teamviewer_gnome_link: ""

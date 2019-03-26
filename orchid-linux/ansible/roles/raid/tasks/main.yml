@@ -1,7 +1,0 @@
-- block:
-    - name: Configure Software RAID
-      include_tasks: mdadm.yml
-
-    - name: Configure Software RAID notifications
-      include_tasks: mdadm-alerts.yml
-  when: steelfin_raid_type == 'mdadm'
