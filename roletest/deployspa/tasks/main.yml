@@ -1,4 +1,4 @@
 ---
 # tasks file for deployspa
 - include_tasks: deploy_webapp.yml
-  when: ansible_nodename == "va33dlvezz302" 
+  when: ansible_nodename == "ServerName" 

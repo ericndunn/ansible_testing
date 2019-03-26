@@ -1,5 +1,5 @@
 ---
-- hosts: "dev2"
+- hosts: "group_name_here"
   gather_facts: true
   roles:
      - deployspa
