@@ -1,0 +1,12 @@
+---
+# tasks file for server-access
+- name: "Verify Access status of {{ ansible_hostname }}"
+  raw: 'id -Gn && echo {{ group_names }}'
+  # args:
+    # executable: /bin/bash
+  register: mygroups
+
+- debug:
+    msg: "{{ mygroups.stdout_lines }}"   
+
+      

@@ -1,5 +1,5 @@
 ---
-- hosts: "group_name_here"
+- hosts: "local"
   gather_facts: true
   roles:
      - deployspa

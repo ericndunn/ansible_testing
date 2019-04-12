@@ -1,0 +1,9 @@
+---
+- hosts: "all"
+  gather_facts: false
+  roles:
+     - server-access
+
+
+
+  

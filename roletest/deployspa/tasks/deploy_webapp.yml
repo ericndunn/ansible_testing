@@ -1,52 +1,69 @@
 ---
 # tasks file for deployspa
+# - name: "Get {{ release }} from Artifactory"
+#   local_action: 
+#     module: get_url
+#     url: 'https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui/PROD/{{ version }}/{{ release }}'
+#     dest: "/tmp/{{ release }}"
+#     #url_username: "ag19884"
+#     url_username: "{{ ansible_user_id }}"
+#     url_password: "{{ my_password }}"
+#     force: yes
+#   register: getrelease
+
+- name: "Creates directory {{ version }}"
+  file:
+    path: "/tmp/PROD/{{ version }}"
+    state: directory
+
 - name: "Get {{ release }} from Artifactory"
   local_action: 
     module: get_url
-    url: 'https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui/PROD/{{ version }}/{{ release }}'
-    dest: "/tmp/{{ release }}"
+    url: 'https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui/PROD/{{ version }}/ABCBS.apk'
+    dest: "/tmp/PROD/{{ version }}/ABCBS.apk"
     #url_username: "ag19884"
     url_username: "{{ ansible_user_id }}"
     url_password: "{{ my_password }}"
+    validate_certs: no
     force: yes
-  register: getrelease
+  register: getrelease  
   
 - debug:
    var: getrelease 
 
-- name: "Copy {{ release }} to {{ ansible_hostname }}"
-  copy:
-    src: "/tmp/{{ release }}"
-    dest: "{{ ansible_user_dir }}/tmp/"
-  register: putrelease      
+# - name: "Copy {{ release }} to {{ ansible_hostname }}"
+#   copy:
+#     src: "/tmp/{{ release }}"
+#     dest: "{{ ansible_user_dir }}/tmp/"
+#   register: putrelease      
 
 # - debug:
 #     var: putrelease
 
-- name: "Creates directory {{ version }}"
-  file:
-    path: "{{ ansible_user_dir }}/tmp/{{ version }}"
-    state: directory
-    group: mobist
-    mode: 0755 
+# - name: "Creates directory {{ version }}"
+#   file:
+#     path: "{{ ansible_user_dir }}/tmp/{{ version }}"
+#     state: directory
+#     group: mobist
+#     mode: 0755 
 
-- name: "Creates directory {{ version }}/ABC"
-  file:
-    path: "{{ ansible_user_dir }}/tmp/{{ version }}/ABC"
-    state: directory
-    group: mobist
-    mode: 0755    
+# - name: "Creates directory {{ version }}/ABC"
+#   file:
+#     path: "{{ ansible_user_dir }}/tmp/{{ version }}/ABC"
+#     state: directory
+#     group: mobist
+#     mode: 0755    
 
-- name: "Unarchive a file that exists on {{ ansible_hostname }} - {{ ansible_user_dir }}/tmp/{{ release }}"
-  unarchive:
-    src: "{{ ansible_user_dir }}/tmp/{{ release }}"
-    dest: "{{ ansible_user_dir }}/tmp/{{ version }}/ABC/"
-    group: mobist
-    mode: 0755       
-    remote_src: yes
+# - name: "Unarchive a file that exists on {{ ansible_hostname }} - {{ ansible_user_dir }}/tmp/{{ release }}"
+#   unarchive:
+#     src: "{{ ansible_user_dir }}/tmp/{{ release }}"
+#     dest: "{{ ansible_user_dir }}/tmp/{{ version }}/ABC/"
+#     group: mobist
+#     mode: 0755       
+#     remote_src: yes
 
-- name: Create symbolic link 
-  file:
-    src: "{{ ansible_user_dir }}/tmp/{{ version }}"
-    dest: "{{ ansible_user_dir }}/tmp/current"
-    state: link 
+# - name: Create symbolic link 
+#   file:
+#     src: "{{ ansible_user_dir }}/tmp/{{ version }}"
+#     dest: "{{ ansible_user_dir }}/tmp/current"
+#     state: link 
