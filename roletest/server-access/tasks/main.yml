@@ -1,27 +1,33 @@
 ---
 # tasks file for server-access
-- name: "Verify Access status of {{ ansible_hostname }}"
+- name: "Verify Access status of Inventory Hostnames"
   raw: 'id -Gn && echo {{ group_names }}'
   # args:
     # executable: /bin/bash
-  register: mygroups
+  register: servergroups
 
 - debug:
-    msg: "{{ mygroups.stdout_lines }}"       
+    msg: "{{ servergroups.stdout_lines }}"       
 
-- name: Output Information to CSV file
+- name: "Output Information to {{ lookup('env','WORKSPACE') }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ lookup('env','BUILD_ID') }}.csv"
   lineinfile:
-    dest: "{{ lookup('env','WORKSPACE') }}/OUT_{{ lookup('pipe','date +%Y-%m-%d') }}xxxx.csv"
-    line: "{{ inventory_hostname }},{{ mygroups.stdout_lines | regex_replace('\\[|u(?!sers)|\\]', '') }}"
+    dest: "{{ lookup('env','WORKSPACE') }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ lookup('env','BUILD_ID') }}.csv"
+    line: "{{ inventory_hostname }},{{ servergroups.stdout_lines | regex_replace('\\[|u(?!sers)|\\]', '') }}"
     create: yes
     state: present 
-  delegate_to: localhost
+  delegate_to: localhost 
 
-# - name: Ansible replace multiple words example
-#   replace:
-#     path: "{{ lookup('env','WORKSPACE') }}/OUT_{{ lookup('pipe','date +%Y-%m-%d-%H-%M') }}.csv"
-#     regexp: "{{ item }}"
-#     replace: ""
-#   with_items:
-#     - '[u\''
-#   delegate_to: localhost
+- name: Remove single quotes
+  replace:
+    path: "{{ lookup('env','WORKSPACE') }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ lookup('env','BUILD_ID') }}.csv"
+    regexp: "'"
+    replace: ""
+  delegate_to: localhost    
+  
+- name: Replace comma-space with comma.
+  replace:
+    path: "{{ lookup('env','WORKSPACE') }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ lookup('env','BUILD_ID') }}.csv"
+    regexp: ", "
+    replace: ","
+  delegate_to: localhost 
+
