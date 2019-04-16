@@ -7,6 +7,21 @@
   register: mygroups
 
 - debug:
-    msg: "{{ mygroups.stdout_lines }}"   
+    msg: "{{ mygroups.stdout_lines }}"       
 
-      
+- name: Output Information to CSV file
+  lineinfile:
+    dest: "{{ lookup('env','WORKSPACE') }}/OUT_{{ lookup('pipe','date +%Y-%m-%d') }}xxxx.csv"
+    line: "{{ inventory_hostname }},{{ mygroups.stdout_lines | regex_replace('\\[|u(?!sers)|\\]', '') }}"
+    create: yes
+    state: present 
+  delegate_to: localhost
+
+# - name: Ansible replace multiple words example
+#   replace:
+#     path: "{{ lookup('env','WORKSPACE') }}/OUT_{{ lookup('pipe','date +%Y-%m-%d-%H-%M') }}.csv"
+#     regexp: "{{ item }}"
+#     replace: ""
+#   with_items:
+#     - '[u\''
+#   delegate_to: localhost

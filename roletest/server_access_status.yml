@@ -1,6 +1,8 @@
 ---
 - hosts: "all"
   gather_facts: false
+  vars:
+    date_epoch: "{{ ansible_date_time.epoch }}"
   roles:
      - server-access
 
