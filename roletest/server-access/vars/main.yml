@@ -1,2 +1,3 @@
 ---
 # vars file for server-access
+jenkinsws: "{{ lookup('env','WORKSPACE') }}"
