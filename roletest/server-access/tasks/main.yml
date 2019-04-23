@@ -1,33 +1,12 @@
 ---
 # tasks file for server-access
-- name: "Verify Access status of Inventory Hostnames"
-  raw: 'id -Gn && echo {{ group_names }}'
-  # args:
-    # executable: /bin/bash
-  register: servergroups
 
-- debug:
-    msg: "{{ servergroups.stdout_lines }}"       
+- include_tasks: user_access_verify.yml
+  #when: ansible_os_family == "RedHat"
 
-- name: "Output Information to {{ jenkinsws }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ lookup('env','BUILD_ID') }}.csv"
-  lineinfile:
-    dest: "{{ jenkinsws }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ lookup('env','BUILD_ID') }}.csv"
-    line: "{{ inventory_hostname }},{{ servergroups.stdout_lines | regex_replace('\\[|u(?!sers)|\\]', '') }}"
-    create: yes
-    state: present 
-  delegate_to: localhost 
+- include_tasks: python_verify.yml
+  #when: ansible_os_family == "RedHat"
 
-- name: Remove single quotes
-  replace:
-    path: "{{ jenkinsws }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ lookup('env','BUILD_ID') }}.csv"
-    regexp: "'"
-    replace: ""
-  delegate_to: localhost    
-  
-- name: Replace comma-space with comma.
-  replace:
-    path: "{{ jenkinsws }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ lookup('env','BUILD_ID') }}.csv"
-    regexp: ", "
-    replace: ","
-  delegate_to: localhost 
+- include_tasks: user_analyze.yml
+  #when: ansible_os_family == "RedHat"  
 
