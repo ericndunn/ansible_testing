@@ -1,3 +1,4 @@
 ---
 # vars file for server-access
 jenkinsws: "{{ lookup('env','WORKSPACE') }}"
+build_id: "{{ lookup('env','BUILD_ID') }}"

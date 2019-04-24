@@ -10,9 +10,9 @@
 - debug:
     msg: "{{ servergroups.stdout_lines }}"       
 
-- name: "Output Information to {{ jenkinsws }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ lookup('env','BUILD_ID') }}.csv"
+- name: "Output Information to {{ jenkinsws }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ build_id }}.csv"
   lineinfile:
-    dest: "{{ jenkinsws }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ lookup('env','BUILD_ID') }}.csv"
+    dest: "{{ jenkinsws }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ build_id }}.csv"
     line: "{{ inventory_hostname }},{{ servergroups.stdout_lines | regex_replace('\\[|u(?!sers)|\\]', '') }}"
     create: yes
     state: present 
@@ -20,14 +20,14 @@
 
 - name: Remove single quotes
   replace:
-    path: "{{ jenkinsws }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ lookup('env','BUILD_ID') }}.csv"
+    path: "{{ jenkinsws }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ build_id }}.csv"
     regexp: "'"
     replace: ""
   delegate_to: localhost    
   
 - name: Replace comma-space with comma.
   replace:
-    path: "{{ jenkinsws }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ lookup('env','BUILD_ID') }}.csv"
+    path: "{{ jenkinsws }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ build_id }}.csv"
     regexp: ", "
     replace: ","
   delegate_to: localhost

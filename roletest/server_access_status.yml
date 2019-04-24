@@ -7,6 +7,9 @@
   roles:
      - server-access
 
+## Command Line EXAMPLE ##
+# ansible-playbook server_access_status.yml -i inventory -l all --ask-pass -e "jenkinsws=./" -e "build_id=1234"     
+
 
 
   
