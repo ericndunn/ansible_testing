@@ -1,0 +1,16 @@
+---
+# tasks file for server-access
+- name: "WHICH PYTHON"
+  raw: 'which python'
+  register: whichpython
+  ignore_errors: True  
+
+- name: "PYTHON VERSION"
+  raw: 'python --version'
+  register: pythonversion
+  ignore_errors: True
+
+- debug:
+    msg: "{{ inventory_hostname }} had {{ whichpython.stdout_lines }} at {{ pythonversion.stdout_lines }}"   
+       
+
