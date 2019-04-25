@@ -3,14 +3,14 @@
 - name: "WHICH PYTHON"
   raw: 'which python'
   register: whichpython
-  ignore_errors: True  
+  ignore_errors: True
+  no_log: True
 
 - name: "PYTHON VERSION"
   raw: 'python --version'
   register: pythonversion
   ignore_errors: True
+  no_log: True
 
 - debug:
-    msg: "{{ inventory_hostname }} had {{ whichpython.stdout_lines }} at {{ pythonversion.stdout_lines }}"   
-       
-
+    msg: "{{ inventory_hostname }} had {{ whichpython.stdout_lines }} at {{ pythonversion.stdout_lines }}"

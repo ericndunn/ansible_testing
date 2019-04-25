@@ -5,11 +5,7 @@
   vars_files:
     - server-access/vars/main.yml
   roles:
-     - server-access
+    - server-access
 
 ## Command Line EXAMPLE ##
-# ansible-playbook server_access_status.yml -i inventory -l all --ask-pass -e "jenkinsws=./" -e "build_id=1234"     
-
-
-
-  
+# ansible-playbook server_access_status.yml -i inventory -l all --ask-pass -e "jenkinsws=./" -e "build_id=1234"

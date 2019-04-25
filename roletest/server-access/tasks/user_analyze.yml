@@ -7,8 +7,8 @@
         else
           echo "NO, {{ lookup('env','USER') }} does not exist in /etc/passwd. {{ inventory_hostname }} connected to Active Directory."
         fi
+  no_log: True
   register: lookforuser
 
 - debug:
     msg: "{{ inventory_hostname }}  {{ lookforuser.stdout_lines }}"
-    

@@ -2,29 +2,30 @@
 # tasks file for server-access
 - name: "Verify Access status of Inventory Hostnames"
   raw: 'id -Gn && echo {{ group_names }}'
+  no_log: True
   # args:
     # executable: /bin/bash
   #ignore_errors: yes  
   register: servergroups
 
 - debug:
-    msg: "{{ servergroups.stdout_lines }}"       
+    msg: "{{ servergroups.stdout_lines }}"
 
 - name: "Output Information to {{ jenkinsws }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ build_id }}.csv"
   lineinfile:
     dest: "{{ jenkinsws }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ build_id }}.csv"
     line: "{{ inventory_hostname }},{{ servergroups.stdout_lines | regex_replace('\\[|u(?!sers)|\\]', '') }}"
     create: yes
-    state: present 
-  delegate_to: localhost 
+    state: present
+  delegate_to: localhost
 
 - name: Remove single quotes
   replace:
     path: "{{ jenkinsws }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ build_id }}.csv"
     regexp: "'"
     replace: ""
-  delegate_to: localhost    
-  
+  delegate_to: localhost
+
 - name: Replace comma-space with comma.
   replace:
     path: "{{ jenkinsws }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ build_id }}.csv"
