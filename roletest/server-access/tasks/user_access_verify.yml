@@ -2,7 +2,7 @@
 # tasks file for server-access
 - name: "Verify Access status of Inventory Hostnames"
   raw: 'id -Gn && echo {{ group_names }}'
-  no_log: True
+  no_log: true
   # args:
     # executable: /bin/bash
   #ignore_errors: yes  
@@ -15,7 +15,7 @@
   lineinfile:
     dest: "{{ jenkinsws }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ build_id }}.csv"
     line: "{{ inventory_hostname }},{{ servergroups.stdout_lines | regex_replace('\\[|u(?!sers)|\\]', '') }}"
-    create: yes
+    create: true
     state: present
   delegate_to: localhost
 

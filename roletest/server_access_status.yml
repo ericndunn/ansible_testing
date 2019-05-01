@@ -1,11 +1,6 @@
 ---
-- hosts: "all"
-  gather_facts: false
-  vars:
-  vars_files:
-    - server-access/vars/main.yml
-  roles:
-    - server-access
-
-## Command Line EXAMPLE ##
-# ansible-playbook server_access_status.yml -i inventory -l all --ask-pass -e "jenkinsws=./" -e "build_id=1234"
+- gather_facts: false
+  hosts: all
+  roles: [server-access]
+  vars: null
+  vars_files: [server-access/vars/main.yml]
