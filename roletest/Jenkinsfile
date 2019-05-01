@@ -1,6 +1,6 @@
 pipeline {
-    agent { label 'MASTER' }
-    }
+    agent any
+
     stages {
         stage('Run Ansible Access operation'){
         
@@ -37,5 +37,5 @@ pipeline {
         }
 
     }
-}
+
 
