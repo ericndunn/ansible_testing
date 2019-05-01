@@ -11,8 +11,8 @@ pipeline {
                     //sh 'ansible-playbook -i dev-servers site.yml'
                     ansiblePlaybook credentialsId: '62c93b86-c4ba-483c-a696-8180694ce559',
                     installation: 'ansible', 
-                    inventory: 'roletest/inventory',
-                    limit: 'all',
+                    inventory: 'roletest/inventorypm',
+                    limit: 'DEV',
                     playbook: 'roletest/server_access_status.yml',
                     colorized: true
                 }
@@ -26,7 +26,7 @@ pipeline {
 
         stage('Performance tests'){
             steps {
-                echo 'Wow! Wicked Fast!!!'
+                echo 'This is the DEV server list'
             }
         }
 
