@@ -1,0 +1,190 @@
+---
+## ansible-playbook install_jenkins_plugins.yml --extra-vars my_jenkins_pass=PASSWORD--HERE
+## NOTE: owner = ansible_user_id (your OS UserID), group = staff (run command to verify owner:group 'ls -la ~/.jenkins')
+## Assumptions: ansible, homebrew, jenkins-lts (basic configuration), jdk-1.8 installed 
+
+- hosts: "localhost"
+  connection: local
+  gather_facts: true
+  vars:
+    ansible_connection: local
+    my_jenkins_pass: "PASSWORD--HERE" 
+    jenkins_plugins:
+      - active-directory
+      - ansible
+      - ansicolor
+      - ant
+      - apache-httpcomponents-client-4-api
+      - artifactory
+      - authentication-tokens
+      - badge
+      - bouncycastle-api
+      - branch-api
+      - build-blocker-plugin
+      - build-environment
+      - build-pipeline-plugin
+      - cobertura
+      - code-coverage-api
+      - command-launcher
+      - conditional-buildstep
+      - config-file-provider
+      - configurationslicing
+      - confluence-publisher
+      - copyartifact
+      - credentials-binding
+      - credentials
+      - cvs
+      - deploy
+      - disk-usage
+      - display-upstream-changes
+      - display-url-api
+      - docker-commons
+      - docker-workflow
+      - durable-task
+      - email-ext
+      - envinject-api
+      - environment-script
+      - extended-read-permission
+      - external-monitor-job
+      - flexible-publish
+      - cloudbees-folder
+      - git-client
+      - git-parameter
+      - git
+      - git-server
+      - github-api
+      - github-branch-source
+      - github-organization-folder
+      - github
+      - gradle
+      - groovy-postbuild
+      - ibm-ucdeploy-publisher
+      - icon-shim
+      - ivy
+      - jackson2-api
+      - javadoc
+      - ace-editor
+      - handlebars
+      - jquery-detached
+      - momentjs
+      - jdk-tool
+      - jira
+      - jobConfigHistory
+      - job-import-plugin
+      - jquery
+      - jquery-ui
+      - jsch
+      - junit
+      - kpp-management-plugin
+      - ldap
+      - lockable-resources
+      - mailer
+      - mapdb-api
+      - mask-passwords
+      - matrix-auth
+      - matrix-project
+      - maven-plugin
+      - multi-branch-project-plugin
+      - nodejs
+      - antisamy-markup-formatter
+      - pam-auth
+      - parameterized-scheduler
+      - parameterized-trigger
+      - workflow-aggregator
+      - pipeline-graph-analysis
+      - pipeline-utility-steps
+      - workflow-api
+      - workflow-basic-steps
+      - pipeline-build-step
+      - pipeline-model-definition
+      - pipeline-model-declarative-agent
+      - pipeline-model-extensions
+      - pipeline-github-lib
+      - workflow-cps
+      - pipeline-input-step
+      - workflow-job
+      - pipeline-milestone-step
+      - pipeline-model-api
+      - workflow-multibranch
+      - workflow-durable-task-step
+      - pipeline-rest-api
+      - workflow-scm-step
+      - workflow-cps-global-lib
+      - pipeline-stage-step
+      - pipeline-stage-tags-metadata
+      - pipeline-stage-view
+      - workflow-step-api
+      - workflow-support
+      - plain-credentials
+      - promoted-builds
+      - rebuild
+      - resource-disposer
+      - run-condition
+      - saferestart
+      - schedule-build
+      - scm-api
+      - scm-sync-configuration
+      - script-security
+      - simple-theme-plugin
+      - slack
+      - ssh-credentials
+      - ssh
+      - ssh-slaves
+      - structs
+      - subversion
+      - token-macro
+      - translation
+      - veracode-jenkins-plugin
+      - violations
+      - windows-slaves
+      - ws-cleanup
+      - xcode-plugin      
+
+  vars_files:
+
+  tasks:      
+
+  - name: "Install plugin {{ jenkins_plugins }}"
+    jenkins_plugin:
+      name: "{{item}}"
+      url_username: admin
+      url_password: "{{ my_jenkins_pass }}"
+      url: http://localhost:8080
+      owner: "{{ ansible_user_id }}"
+      group: staff
+      with_dependencies: yes
+      jenkins_home: "/Users/{{ ansible_user_id }}/.jenkins"
+    with_items: "{{ jenkins_plugins }}"     
+    register: install_plugin
+
+  - name: "DEBUG Install plugin {{ jenkins_plugins }}"
+    debug:
+      msg: 
+        - "{{ install_plugin.results }}"
+        
+  - name: Enable the plugin
+    jenkins_plugin:
+      name: "{{item}}"
+      url_username: admin
+      url_password: "{{ my_jenkins_pass }}"
+      url: http://localhost:8080
+      owner: "{{ ansible_user_id }}"
+      group: staff
+      state: enabled
+      jenkins_home: "/Users/{{ ansible_user_id }}/.jenkins"
+    with_items: "{{ jenkins_plugins }}"     
+    register: enable_plugin
+    
+  - name: "DEBUG Enable the plugin {{ jenkins_plugins }}"
+    debug:
+      msg: "{{ enable_plugin.results }}"                       
+    
+  - name: Brew Restart Jenkins (Darwin)
+    command: /usr/local/bin/brew services restart jenkins-lts
+    when: ansible_os_family == "Darwin"
+    register: brew_restart_jenkins
+
+  - name: DEBUG Brew Restart Jenkins (Darwin)
+    debug:
+      msg: "{{ brew_restart_jenkins.stdout_lines }}"     
+
