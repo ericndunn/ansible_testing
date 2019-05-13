@@ -1,0 +1,12 @@
+---
+- gather_facts: true
+  hosts: "localhost"
+  #debugger: on_failed
+  connection: local
+  roles: [jenkins]
+  vars: null
+  vars_files: [jenkins/vars/main.yml]
+
+## ansible-playbook install_jenkins_plugins.yml
+## NOTE: owner = ansible_user_id (your OS UserID), group = staff (run command to verify owner:group 'ls -la ~/.jenkins')
+## Assumptions: ansible, homebrew, jenkins-lts (basic configuration), jdk-1.8 installed 
