@@ -8,7 +8,10 @@
   gather_facts: true
   vars:
     ansible_connection: local
-    my_jenkins_pass: "PASSWORD--HERE" 
+    my_jenkins_user: "JENKINS--USER--HERE"
+    my_jenkins_pass: "JENKINS__PASSWORD--HERE"
+    owner_name: "{{ ansible_user_id }}"
+    group_name: staff
     jenkins_plugins:
       - active-directory
       - ansible
@@ -150,8 +153,8 @@
       url_username: admin
       url_password: "{{ my_jenkins_pass }}"
       url: http://localhost:8080
-      owner: "{{ ansible_user_id }}"
-      group: staff
+      owner: "{{ owner_name }}"
+      group: "{{ group_name }}"
       with_dependencies: yes
       jenkins_home: "/Users/{{ ansible_user_id }}/.jenkins"
     with_items: "{{ jenkins_plugins }}"     
@@ -165,11 +168,11 @@
   - name: Enable the plugin
     jenkins_plugin:
       name: "{{item}}"
-      url_username: admin
+      url_username: "{{ my_jenkins_user }}"
       url_password: "{{ my_jenkins_pass }}"
       url: http://localhost:8080
-      owner: "{{ ansible_user_id }}"
-      group: staff
+      owner: "{{ owner_name }}"
+      group: "{{ group_name }}"
       state: enabled
       jenkins_home: "/Users/{{ ansible_user_id }}/.jenkins"
     with_items: "{{ jenkins_plugins }}"     
