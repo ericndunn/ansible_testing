@@ -1,5 +1,5 @@
 ---
-## ansible-playbook install_jenkins_plugins.yml --extra-vars my_jenkins_pass=PASSWORD--HERE
+## ansible-playbook install_jenkins_plugins.yml
 ## NOTE: owner = ansible_user_id (your OS UserID), group = staff (run command to verify owner:group 'ls -la ~/.jenkins')
 ## Assumptions: ansible, homebrew, jenkins-lts (basic configuration), jdk-1.8 installed 
 
@@ -9,7 +9,7 @@
   vars:
     ansible_connection: local
     my_jenkins_user: "JENKINS--USER--HERE"
-    my_jenkins_pass: "JENKINS__PASSWORD--HERE"
+    my_jenkins_pass: "JENKINS--PASSWORD--HERE"
     owner_name: "{{ ansible_user_id }}"
     group_name: staff
     jenkins_plugins:
@@ -156,7 +156,7 @@
       owner: "{{ owner_name }}"
       group: "{{ group_name }}"
       with_dependencies: yes
-      jenkins_home: "/Users/{{ ansible_user_id }}/.jenkins"
+      jenkins_home: "/Users/{{ owner_name }}/.jenkins"
     with_items: "{{ jenkins_plugins }}"     
     register: install_plugin
 
@@ -174,7 +174,7 @@
       owner: "{{ owner_name }}"
       group: "{{ group_name }}"
       state: enabled
-      jenkins_home: "/Users/{{ ansible_user_id }}/.jenkins"
+      jenkins_home: "/Users/{{ owner_name }}/.jenkins"
     with_items: "{{ jenkins_plugins }}"     
     register: enable_plugin
     
