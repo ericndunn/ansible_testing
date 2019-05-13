@@ -1,0 +1,19 @@
+---
+- name: Enable the plugin
+  jenkins_plugin:
+    name: "{{item}}"
+    url_username: "{{ my_jenkins_user }}"
+    url_password: "{{ my_jenkins_pass }}"
+    url: http://localhost:8080
+    owner: "{{ owner_name }}"
+    group: "{{ group_name }}"
+    state: enabled
+    jenkins_home: "/Users/{{ owner_name }}/.jenkins"
+  with_items: "{{ jenkins_plugins }}"     
+  register: enable_plugin
+  
+# - name: "DEBUG Enable the plugin {{ jenkins_plugins }}"
+#   debug:
+#     msg: 
+#       - "{{ enable_plugin.results }}"
+

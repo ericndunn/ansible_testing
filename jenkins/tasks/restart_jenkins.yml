@@ -1,0 +1,9 @@
+---
+- name: Brew Restart Jenkins (Darwin)
+  command: /usr/local/bin/brew services restart jenkins-lts
+  when: ansible_os_family == "Darwin"
+  register: brew_restart_jenkins
+
+- name: DEBUG Brew Restart Jenkins (Darwin)
+  debug:
+    msg: "{{ brew_restart_jenkins.stdout_lines }}"  
