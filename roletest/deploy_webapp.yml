@@ -1,8 +1,10 @@
 ---
-- hosts: "local"
+- hosts: "all"
   gather_facts: true
-  roles:
-     - deployspa
+  roles: [deployspa]
+  vars: 
+  vars_files: [deployspa/vars/main.yml] 
+   
 
 
 

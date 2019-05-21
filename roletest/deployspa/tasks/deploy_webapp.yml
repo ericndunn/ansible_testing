@@ -11,25 +11,60 @@
 #     force: yes
 #   register: getrelease
 
-- name: "Creates directory {{ version }}"
+- name: "Creates directory /tmp/MADT/{{ WHAT_ENV }}"
   file:
-    path: "/tmp/PROD/{{ version }}"
+    path: "/tmp/MADT/{{ WHAT_ENV }}"
     state: directory
+    #mode: 0755
 
-- name: "Get {{ release }} from Artifactory"
-  local_action: 
-    module: get_url
-    url: 'https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui/PROD/{{ version }}/ABCBS.apk'
-    dest: "/tmp/PROD/{{ version }}/ABCBS.apk"
-    #url_username: "ag19884"
-    url_username: "{{ ansible_user_id }}"
+- name: "Creates directory /tmp/MADT/{{ WHAT_ENV }}/{{ version }}"
+  file:
+    path: "/tmp/MADT/{{ WHAT_ENV }}/{{ version }}"
+    state: directory
+    #mode: 0755    
+
+# - name: "Get {{ release }} from Artifactory"
+#   local_action: 
+#     module: get_url
+#     url: 'https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui/PROD/{{ version }}/ABCBS.apk'
+#     dest: "/tmp/PROD/{{ version }}/ABCBS.apk"
+#     #url_username: "ag19884"
+#     url_username: "{{ ansible_user_id }}"
+#     url_password: "{{ my_password }}"
+#     validate_certs: no
+#     force: yes
+#   register: getrelease 
+
+- name: "Get {{ version }} from Artifactory"
+  # local_action: 
+  # module: get_url
+  get_url:
+    url: "https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui/SEC/{{ version }}/{{ item }}"
+    dest: "/tmp/MADT/{{ WHAT_ENV }}/{{ version }}"
+  #mode: 0755     
+    url_username: ag19884
     url_password: "{{ my_password }}"
     validate_certs: no
     force: yes
+  with_items:
+  - "ABC-{{ version }}.tar.gz"
+  - "EBCBS-{{ version }}.tar.gz"
+  - "ABCBS-{{ version }}.tar.gz"
   register: getrelease  
+
+# https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui/SEC/8.4.154/ABC-8.4.154.tar.gz
+# https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui/SEC/8.4.154/EBCBS-8.4.154.tar.gz
+# https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui/SEC/8.4.154/ABCBS-8.4.154.tar.gz  
   
 - debug:
-   var: getrelease 
+   var: getrelease
+
+# - name: Grab a bunch of jQuery stuff
+#   get_url: url=https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui/SEC/8.4.154/{{ version }}/{{ item }} dest=/tmp/{{ WHAT_ENV }}/{{ version }} mode=0444
+#   with_items:
+#   - ABC-8.4.154.tar.gz
+#   - EBCBS-8.4.154.tar.gz
+#   - ABCBS-8.4.154.tar.gz    
 
 # - name: "Copy {{ release }} to {{ ansible_hostname }}"
 #   copy:
