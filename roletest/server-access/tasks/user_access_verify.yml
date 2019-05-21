@@ -5,10 +5,11 @@
   no_log: true
   # args:
     # executable: /bin/bash
-  #ignore_errors: yes  
+  ignore_errors: yes  
   register: servergroups
 
 - debug:
+    #msg: "{{ servergroups }}"
     msg: "{{ servergroups.stdout_lines }}"
 
 - name: "Output Information to {{ jenkinsws }}/OUT_{{ lookup('pipe','date +%Y%m%d') }}_{{ build_id }}.csv"
