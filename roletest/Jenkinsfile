@@ -11,7 +11,7 @@ pipeline {
                     //sh 'ansible-playbook -i dev-servers site.yml'
                     ansiblePlaybook credentialsId: '62c93b86-c4ba-483c-a696-8180694ce559',
                     installation: 'ansible', 
-                        inventory: "{{ ansible_user_dir }}/inventory",
+                        inventory: "~/inventory",
                     limit: 'all',
                     playbook: 'roletest/server_access_status.yml',
                     colorized: true
