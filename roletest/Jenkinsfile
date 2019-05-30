@@ -26,7 +26,11 @@ pipeline {
 
         stage('Performance tests'){
             steps {
-                echo 'This is the DEV server list'
+                sh '''#!/bin/bash -l
+                      echo $0
+                      # more stuff I needed to do,
+                      newman run ~/Downloads/response.json
+                '''
             }
         }
 
