@@ -15,13 +15,13 @@
   file:
     path: "/tmp/MADT/{{ WHAT_ENV }}"
     state: directory
-    #mode: 0755
+    mode: 0755
 
 - name: "Creates directory /tmp/MADT/{{ WHAT_ENV }}/{{ version }}"
   file:
     path: "/tmp/MADT/{{ WHAT_ENV }}/{{ version }}"
     state: directory
-    #mode: 0755    
+    mode: 0755    
 
 # - name: "Get {{ release }} from Artifactory"
 #   local_action: 
@@ -41,7 +41,7 @@
   get_url:
     url: "https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui/SEC/{{ version }}/{{ item }}"
     dest: "/tmp/MADT/{{ WHAT_ENV }}/{{ version }}"
-  #mode: 0755     
+    mode: 0755     
     url_username: ag19884
     url_password: "{{ my_password }}"
     validate_certs: no

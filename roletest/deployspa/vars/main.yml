@@ -1,6 +1,6 @@
 ---
 # vars file for deployspa
-my_password: ""
+my_password: "Deathwish!940351"
 WHAT_ENV: DEV
 version: "8.4.154"
 #Use ansible-vault to encrypt any secret data, i.e. passwords
