@@ -1,104 +1,221 @@
 ---
 # tasks file for deployspa
-# - name: "Get {{ release }} from Artifactory"
-#   local_action: 
-#     module: get_url
-#     url: 'https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui/PROD/{{ version }}/{{ release }}'
-#     dest: "/tmp/{{ release }}"
-#     #url_username: "ag19884"
-#     url_username: "{{ ansible_user_id }}"
-#     url_password: "{{ my_password }}"
-#     force: yes
-#   register: getrelease
+# stultus probationem
+        
+- name: "Verify: {{ IHS_VERSION }} was passed as parameter"
+  local_action: 
+    module: shell
+      echo "{{ IHS_VERSION }}"
+  register: echo_ihs_version
+  failed_when: echo_ihs_version.stdout ==""
+- name: "DEBUG: Verify: {{ IHS_VERSION }} was passed as parameter"  
+  debug:
+    msg: "{{ echo_ihs_version.stdout }}"
 
-- name: "Creates directory /tmp/MADT/{{ WHAT_ENV }}"
-  file:
-    path: "/tmp/MADT/{{ WHAT_ENV }}"
-    state: directory
+- name: "Get WSR Page"
+  local_action: 
+    module: get_url 
+    url: "{{ lookup('env','WSR_URL') }}" 
+    dest: "{{ lookup('env','WORKSPACE') }}/wsr_page.txt"
+    force_basic_auth: yes 
+    url_username: "{{ lookup('env','MY_USERID') }}"
+    url_password: "{{ lookup('env','MY_PASSWORD') }}"
+    validate_certs: no      
+    mode: 0755 
+  register: wsr_results_get_url
+- name: "DEBUG: Get WSR Page"
+  debug:
+    msg:
+      - "Links from {{ wsr_results_get_url.url }}"
+      - "were sent to {{ wsr_results_get_url.dest }}" 
+
+- name: "Parse WSR Page and create URLs file"
+  local_action: 
+    module: shell
+            /bin/cat "{{ lookup('env','WORKSPACE') }}/wsr_page.txt" | \
+            grep -Eo "(http|https)://[a-zA-Z0-9./?=_-]*\.war" | \
+            sort | uniq > "{{ lookup('env','WORKSPACE') }}/war_urls.txt"
+    warn: false        
+  register: create_war_url_file
+- name: "DEBUG: Parse WSR Page and create URLs file"  
+  debug:
+    msg: 
+      - "Created {{ lookup('env','WORKSPACE') }}/war_urls.txt"      
+
+- name: "Cat war_urls.txt"
+  local_action: 
+    module: shell
+            cat "{{ lookup('env','WORKSPACE') }}/war_urls.txt"
+  register: echo_war_urls_list
+  failed_when: echo_war_urls_list.stdout ==""
+- name: "DEBUG: Cat war_urls.txt"  
+  debug:
+    msg: "{{ echo_war_urls_list.stdout.split('\n') }}"
+
+# - name: "List IHS Artifact basename from URL"
+#   debug:
+#     msg: "{{ list_ihs }}"
+
+# - name: "List WAS Artifact basename from URL"
+#   debug:
+#     msg: "{{ list_wars }}"
+
+- name: "Get Release Files from Artifactory according to war_urls.txt"
+  local_action: 
+    module: get_url 
+    url: "{{ item }}" 
+    dest: "{{ lookup('env','WORKSPACE') }}"
+    force_basic_auth: yes 
+    url_username: "{{ lookup('env','MY_USERID') }}"
+    url_password: "{{ lookup('env','MY_PASSWORD') }}"
+    validate_certs: no      
     mode: 0755
-
-- name: "Creates directory /tmp/MADT/{{ WHAT_ENV }}/{{ version }}"
-  file:
-    path: "/tmp/MADT/{{ WHAT_ENV }}/{{ version }}"
-    state: directory
-    mode: 0755    
-
-# - name: "Get {{ release }} from Artifactory"
-#   local_action: 
-#     module: get_url
-#     url: 'https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui/PROD/{{ version }}/ABCBS.apk'
-#     dest: "/tmp/PROD/{{ version }}/ABCBS.apk"
-#     #url_username: "ag19884"
-#     url_username: "{{ ansible_user_id }}"
-#     url_password: "{{ my_password }}"
-#     validate_certs: no
-#     force: yes
-#   register: getrelease 
-
-- name: "Get {{ version }} from Artifactory"
-  # local_action: 
-  # module: get_url
-  get_url:
-    url: "https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui/SEC/{{ version }}/{{ item }}"
-    dest: "/tmp/MADT/{{ WHAT_ENV }}/{{ version }}"
-    mode: 0755     
-    url_username: ag19884
-    url_password: "{{ my_password }}"
-    validate_certs: no
-    force: yes
   with_items:
-  - "ABC-{{ version }}.tar.gz"
-  - "EBCBS-{{ version }}.tar.gz"
-  - "ABCBS-{{ version }}.tar.gz"
-  register: getrelease  
+  - "{{ echo_war_urls_list.stdout_lines }}"   
+  register: get_url_results
+- name: "DEBUG: Get Release Files from Artifactory"
+  debug:
+    msg:
+      - "Checksum of files from source:"
+      - "{{ get_url_results.results | map(attribute='item') | list }}"
+      - "{{ get_url_results.results | map(attribute='md5sum') | list }}"
 
+- name: "List *.war if exists on {{ lookup('env','WORKSPACE') }}"
+  local_action: 
+    module: find
+    paths: "{{ lookup('env','WORKSPACE') }}"
+    patterns: "*.war"
+    recurse: yes
+  register: files_matched
+- name: "DEBUG: List *.war if exists on {{ lookup('env','WORKSPACE') }}"  
+  debug:
+    msg: "{{ files_matched.files | map(attribute='path') | list }}"                       
+
+- name: "Create file for versioning the WARS"
+  local_action: 
+    module: file
+    path: "{{ item.path }}.txt"
+    state: touch
+  with_items: "{{ files_matched.files }}"
+  register: create_version_files
+- name: "DEBUG: Create file for versioning the WARS"  
+  debug:
+    msg: "{{ create_version_files.results | map(attribute='dest') | list }}"                  
+
+- name: "Check directory /tmp/MADT exists."
+  stat:
+    path: /tmp/MADT
+  register: madt_dir
+- name: "DEBUG: Check directory /tmp/MADT exists"
+  debug:
+    msg: "The directory /tmp/MADT exists"
+  when: madt_dir.stat.isdir is defined and madt_dir.stat.isdir
+
+- name: "Remove /tmp/MADT"
+  file:
+    state: "{{ item }}"
+    path: "/tmp/MADT"
+    group: mobist
+    mode: '0775'
+  with_items:
+    - absent
+    - directory
+  when: madt_dir.stat.isdir is defined and madt_dir.stat.isdir
+  register: remove_madt 
+- name: "DEBUG: Remove /tmp/MADT"
+  debug:
+    msg: "{{ remove_madt }}"      
+
+- name: "Creates directory /tmp/MADT/deploy_wars"
+  file:
+    path: "/tmp/MADT/deploy_wars"
+    state: directory
+    group: mobist
+    mode: 0775
+  register: create_madt
+- name: "DEBUG: Creates directory /tmp/MADT/deploy_wars"  
+  debug:
+    msg: "{{ create_madt }}"
+
+- name: "Copy War and War-Versioning Files to {{ ansible_hostname }} /tmp/MADT/deploy_wars"
+  copy:
+    src: "{{ item }}"
+    dest: /tmp/MADT/deploy_wars
+    group: mobist
+    mode: 0775
+  with_fileglob:
+  - "{{ lookup('env','WORKSPACE') }}/*.war"
+  - "{{ lookup('env','WORKSPACE') }}/*.txt"
+  register: put_war_release
+- name: "DEBUG: Copy War and War-Versioning Files from {{ lookup('env','WORKSPACE') }}"  
+  debug:
+    msg: 
+      - "{{ put_war_release.results | map(attribute='item') | list }}"
+- name: "DEBUG: Copy War and War-Versioning Files to /tmp/MADT/deploy_wars"  
+  debug:
+    msg: 
+      - "{{ put_war_release.results | map(attribute='dest') | list }}"       
+
+# - name: "Find {{ lookup('env','WORKSPACE') }}/*.tar.gz if exists"
+#   local_action: 
+#     module: find
+#     paths: "{{ lookup('env','WORKSPACE') }}"
+#     patterns: "*.tar.gz"
+#     recurse: yes
+#   register: files_matched_tar
+# - name: "DEBUG: Find {{ lookup('env','WORKSPACE') }}/*.tar.gz if exists"  
+#   debug: 
+#     msg: "{{ files_matched_tar.files | map(attribute='path') | list }}"         
+
+# - name: "Check directory /tmp/MADT/{{ lookup('env','IHS_VERSION') }} exists."
+#   stat:
+#     path: "/tmp/MADT/{{ lookup('env','IHS_VERSION') }}"
+#   register: ihs_version
+# - debug:
+#     msg: "The directory {{ lookup('env','IHS_VERSION') }} exists"
+#   when: ihs_version.stat.isdir is defined and pp.stat.isdir          
+ 
+# - name: "Create directory /tmp/MADT/{{ lookup('env','IHS_VERSION') }} if not exists"
+#   file:
+#     path: "/tmp/MADT/{{ lookup('env','IHS_VERSION') }}"
+#     state: directory
+#     mode: 0755
+#     group: mobist
+#   when: ihs_version.stat.exists == false
+
+# - name: "Copy War and War-Versioning Files to {{ ansible_hostname }} /tmp/MADT/"
+#   copy:
+#     src: "{{ item }}"
+#     dest: /tmp/MADT/
+#     group: mobist
+#     mode: 0775
+#   with_fileglob:
+#   - "{{ lookup('env','WORKSPACE') }}/*.war"
+#   # - "{{ lookup('env','WORKSPACE') }}/*.tar.gz"
+#   - "{{ lookup('env','WORKSPACE') }}/*.txt"
+#   register: put_war_release
+# - debug:
+#     msg: "{{ put_war_release.results }}"
+
+# - name: "Copy IHS Files to /tmp/MADT/{{ lookup('env','IHS_VERSION') }}"
+#   copy:
+#     src: "{{ item }}"
+#     dest: "/tmp/MADT/{{ lookup('env','IHS_VERSION') }}"
+#     group: mobist
+#     mode: 0775
+#   with_fileglob:
+#   #- "{{ lookup('env','WORKSPACE') }}/*.war"
+#   - "{{ lookup('env','WORKSPACE') }}/*.tar.gz"
+#   #- "{{ lookup('env','WORKSPACE') }}/*.txt"
+#   register: put_ihs_release
+# - debug:
+#     msg: "{{ put_ihs_release.results }}"         
+
+  
+# https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/commercial/contents-commercial-rest-war/1.0.0/contents-commercial-rest-war-1.0.0.war
+# https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/commercial/idcards-commercial-rest-war/1.0.0/idcards-commercial-rest-war-1.0.0.war
 # https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui/SEC/8.4.154/ABC-8.4.154.tar.gz
 # https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui/SEC/8.4.154/EBCBS-8.4.154.tar.gz
-# https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui/SEC/8.4.154/ABCBS-8.4.154.tar.gz  
-  
-- debug:
-   var: getrelease
+# https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui/SEC/8.4.154/ABCBS-8.4.154.tar.gz
 
-# - name: Grab a bunch of jQuery stuff
-#   get_url: url=https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui/SEC/8.4.154/{{ version }}/{{ item }} dest=/tmp/{{ WHAT_ENV }}/{{ version }} mode=0444
-#   with_items:
-#   - ABC-8.4.154.tar.gz
-#   - EBCBS-8.4.154.tar.gz
-#   - ABCBS-8.4.154.tar.gz    
 
-# - name: "Copy {{ release }} to {{ ansible_hostname }}"
-#   copy:
-#     src: "/tmp/{{ release }}"
-#     dest: "{{ ansible_user_dir }}/tmp/"
-#   register: putrelease      
-
-# - debug:
-#     var: putrelease
-
-# - name: "Creates directory {{ version }}"
-#   file:
-#     path: "{{ ansible_user_dir }}/tmp/{{ version }}"
-#     state: directory
-#     group: mobist
-#     mode: 0755 
-
-# - name: "Creates directory {{ version }}/ABC"
-#   file:
-#     path: "{{ ansible_user_dir }}/tmp/{{ version }}/ABC"
-#     state: directory
-#     group: mobist
-#     mode: 0755    
-
-# - name: "Unarchive a file that exists on {{ ansible_hostname }} - {{ ansible_user_dir }}/tmp/{{ release }}"
-#   unarchive:
-#     src: "{{ ansible_user_dir }}/tmp/{{ release }}"
-#     dest: "{{ ansible_user_dir }}/tmp/{{ version }}/ABC/"
-#     group: mobist
-#     mode: 0755       
-#     remote_src: yes
-
-# - name: Create symbolic link 
-#   file:
-#     src: "{{ ansible_user_dir }}/tmp/{{ version }}"
-#     dest: "{{ ansible_user_dir }}/tmp/current"
-#     state: link 
