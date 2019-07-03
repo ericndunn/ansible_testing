@@ -1,4 +1,9 @@
 ---
 # tasks file for deployspa
-- include_tasks: deploy_webapp.yml
+#- include_tasks: deploy_webapp.yml
+- include_tasks: deploy_maven_artifacts.yml
+
+
+
+#- include_tasks: deploy_webapp.yml
   #when: ansible_nodename == "ServerName" 

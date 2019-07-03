@@ -1,18 +1,20 @@
 ---
 # vars file for deployspa
-artifactory_ui_url: "https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui"
-artifactory_commercial_url: "https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/commercial"
-confluence_source_url: "https://confluence.anthem.com/display/MAAA/WSR+-+Dead+Pool?src=contextnavpagetreemode"
-list_wars: "{{ echo_my_file_list.stdout | regex_findall('\\b(?:[a-z\\-]*[\\d\\.\\-]*\\.war)\\b') | list }}"
-list_ihs: "{{ echo_my_file_list.stdout | regex_findall('\\b(?:[A-Za-z\\-]*[\\d\\.\\-]*\\.tar\\.gz)\\b') | list }}"
+artifactory_repository_url: "https://artifactory.anthem.com/artifactory/maven-releases"
+confluence_source_url: "{{ lookup('env','WSR_URL') }}"
+list_wars: "{{ echo_war_urls_list.stdout | regex_findall('\\b(?:[a-z\\-]*[\\d\\.\\-]*\\.war)\\b') | list }}"
+workspace_dir: "{{ lookup('env','WORKSPACE') }}"
+my_userid: "{{ lookup('env','MY_USERID') }}"
+my_password: "{{ lookup('env','MY_PASSWORD') }}"
+build_tag_dir: "{{ workspace_dir }}/{{ lookup('env','BUILD_TAG') }}"
+deploy_war_dir: "/tmp/MADT/{{ lookup('env','BUILD_TAG') }}"
+
+#### TEST --- IGNORE ###############
 
 list_ihs_file: "{{ echo_my_file_list.stdout | regex_findall('\\b(?:[\\d\\.\\-]*\\.tar\\.gz)\\b') }}"
 IHS_VERSION: "{{ lookup('env','IHS_VERSION') }}"
+list_ihs: "{{ echo_my_file_list.stdout | regex_findall('\\b(?:[A-Za-z\\-]*[\\d\\.\\-]*\\.tar\\.gz)\\b') | list }}"
 
-#IHS_VERSION: "-{{ lookup('env','IHS_VERSION') }}.tar.gz"
-
-#list_wars: "{{ my_items.stdout | regex_findall('\\b(?:[A-Za-z]{1,99}\\-[A-Za-z]{1,99}\\-[A-Za-z]{1,99}\\-[A-Za-z]{1,99}\\-[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,5}\\.war)\\b') }}"
-#list_ihs: "{{ my_items.stdout | regex_findall('\\b(?:[A-Z]{1,5}\\-[0-9]{1,3}\\.[0-9]{1,3}\\.[0-999]{1,5}\\.tar\\.gz)\\b') | list }}"
 
 #Use ansible-vault to encrypt any secret data, i.e. passwords
 
