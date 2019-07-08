@@ -3,7 +3,7 @@ NOTE: owner = ansible_user_id (your OS UserID), group = staff (run command to ve
 Assumptions: homebrew, ansible, jenkins-lts (basic configuration), *jdk-1.8 installed
 
 - Install homebrew
-	https://docs.brew.sh/Installation
+	- https://docs.brew.sh/Installation
 - Install ansible
 	brew install ansible
 - Install jenkins-lts
