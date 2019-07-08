@@ -4,7 +4,7 @@
     name: "{{item}}"
     url_username: "{{ my_jenkins_user }}"
     url_password: "{{ my_jenkins_pass }}"
-    url: http://0.0.0.0:1111
+    url: http://localhost:8080
     owner: "{{ owner_name }}"
     group: "{{ group_name }}"
     state: enabled

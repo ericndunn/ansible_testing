@@ -1,0 +1,608 @@
+- setup:
+  register: my_setup
+- debug:
+    msg: "{{ my_setup }}"  
+
+# Determine if a path exists and is a directory.  Note that we need to test
+# both that p.stat.isdir actually exists, and also that it's set to true.
+- name: Recursively find /usr/WebSphere/wlp/usr/servers war files
+  find:
+    paths: /usr/WebSphere/wlp/usr/servers
+    patterns: "*.war,*.war.txt"
+    get_checksum: yes
+    recurse: yes
+    excludes: '*.log'
+  register: find_wars
+  
+- debug:
+    msg: 
+      - "{{ find_wars.files | json_query('[].path[]') | list }}"
+      - "{{ find_wars.files | json_query('[].checksum[]') | list }}"
+      # - "{{ find_wars.files | json_query('[].checksum[]') | list }}"
+
+# - name: Ansible create file if it doesn't exist example
+#   file:
+#     path: "{{ workspace_dir }}/output.txt"
+#     state: touch
+#     mode: 0777
+#   delegate_to: localhost       
+
+- name: "loop through list from a variable"
+  debug:
+    msg: "{{item}}"
+  with_items: "{{ find_wars.files | json_query('[].path[]') | list }}"
+
+- name: get the remote-features1
+  set_fact:
+     host_features1: "{{ find_wars.files | json_query('[].path[]') | list }}" 
+
+- name: get the remote-features2
+  set_fact:
+     host_features2: "{{ find_wars.files | json_query('[].checksum[]') | list }}"
+
+   
+
+
+- name: "debug2"   
+  debug:
+    msg: "value is: {{ lookup('vars', item) }} "   
+  loop: "{{ hostvars[inventory_hostname] | select('match', '^linux_hosts_entries') |list  }}"
+
+
+- shell: 
+    echo "{{ ansible_hostname }}\n{{ host_features1 | regex_replace(', ', '\n') }}" >> "{{ workspace_dir }}/output1.txt"
+    #echo "{{ ansible_hostname }}\n{{ host_features2 | regex_replace(', ', '\n') }}" >> "{{ workspace_dir }}/output1.txt" 
+  delegate_to: localhost
+  register: shell_echo1
+- debug:
+    msg: 
+      - "{{ shell_echo1 }}"
+
+# {{ host_features1 | union(host_features2) }}   
+
+- xml:
+    path: /Users/ag19884/tmp/application.xml
+    xpath: webApplication
+    content: attribute
+  register: instance_attributes
+  delegate_to: localhost 
+
+- name: Match 29 wars
+  debug:
+    msg: 
+      # - "{{ instance_attributes.matches() | [regex_findall('[0-9]')] }}"
+      - "{{ instance_attributes.matches.28 }}"
+      # - "{{ instance_attributes.matches.2 }}"
+      # - "{{ instance_attributes.matches.3 }}"
+      # - "{{ instance_attributes.matches.4 }}"
+      # - "{{ instance_attributes.matches.5 }}"
+      # - "{{ instance_attributes.matches.6 }}"
+      # - "{{ instance_attributes.matches.7 }}"
+      # - "{{ instance_attributes.matches.8 }}"
+      # - "{{ instance_attributes.matches.9 }}"
+      # - "{{ instance_attributes.matches.10 }}"
+      # - "{{ instance_attributes.matches.11 }}"
+      # - "{{ instance_attributes.matches.12 }}"
+      # - "{{ instance_attributes.matches.13 }}"
+      # - "{{ instance_attributes.matches.14 }}"
+      # - "{{ instance_attributes.matches.15 }}"
+      # - "{{ instance_attributes.matches.16 }}"
+      # - "{{ instance_attributes.matches.17 }}"
+      # - "{{ instance_attributes.matches.18 }}"
+      # - "{{ instance_attributes.matches.19 }}"
+      # - "{{ instance_attributes.matches.20 }}"
+      # - "{{ instance_attributes.matches.21 }}"
+      # - "{{ instance_attributes.matches.22 }}"
+      # - "{{ instance_attributes.matches.23 }}"
+      # - "{{ instance_attributes.matches.24 }}"
+      # - "{{ instance_attributes.matches.25 }}"
+      # - "{{ instance_attributes.matches.26 }}"
+      # - "{{ instance_attributes.matches.27 }}"
+      # - "{{ instance_attributes.matches.28 }}"
+  
+
+- name: Read attribute value
+  xml:
+    path: /Users/ag19884/tmp/application.xml
+    xpath: webApplication
+    content: attribute
+    attribute: location
+  register: xmlresp
+  delegate_to: localhost  
+
+- name: DEBUG var xmlresp
+  debug:
+    var: xmlresp
+
+- name: DEBUG No list and list
+  debug:
+    msg: 
+      - "{{ xmlresp.matches | map(attribute='webApplication.location') | list |  regex_replace('ma-messagecenter-war.war', 'ma-messagecenter-war.xxx.war') }}"
+
+
+
+
+
+
+  # <webApplication id="AnthemAnywhereAppInit" location="app-init-war.war" />
+
+
+
+
+
+# - stat:
+#     path: /usr/WebSphere/wlp/usr/servers/perf5_api/apps
+#   register: p
+# - debug:
+#     msg: "Path exists and is a directory"
+#   when: p.stat.isdir is defined and p.stat.isdir
+
+# # Use sha1 to calculate checksum
+# - stat:
+#     path: /usr/WebSphere/wlp/usr/servers/perf5_api/apps
+#     checksum_algorithm: sha1
+#     get_checksum: yes
+#   when: "groups['FS-AA-DEV-IHS'] | select('search','va33tlvwbs330') | list"  
+#   register: checksum_algorithm_check
+  
+# - debug:
+#     msg: "{{checksum_algorithm_check}}"
+
+
+# - name: Display paths of all .txt files in dir
+#   debug: msg={{ lookup('fileglob', '/usr/WebSphere/wlp/usr/servers/perf1_api/apps/*.*') }}
+ 
+
+# - name: get difference of two files
+#   command: diff -rq /usr/WebSphere/wlp/usr/servers/perf1_api/apps /usr/WebSphere/wlp/usr/servers/perf5_api/apps
+#   register: difference
+#   failed_when: difference.rc > 1
+#   changed_when: difference.rc == 1
+#   when: "groups['FS-AA-DEV-IHS'] | select('search','va33tlvwbs330') | list"
+
+# - name: debug output
+#   debug: var=difference.stdout.split('\n')
+
+
+# - maven_artifact:
+#     group_id: com.anthem.mobile.aggregation
+#     artifact_id: ma-userregistration-war
+#     version: 2.0.4
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.anthem.madt.commercial
+#     artifact_id: contents-commercial-rest-war 
+#     version: 1.0.0
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.anthem.madt.commercial
+#     artifact_id: idcards-commercial-rest-war 
+#     version: 1.0.3
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.anthem.madt.commercial
+#     artifact_id: preference-center-commercial-rest-war 
+#     version: 0.0.4
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.anthem.madt.commercial
+#     artifact_id: voyager-commercial-rest-war 
+#     version: 1.1.0
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.anthem.mobile.aggregation
+#     artifact_id: app-init-war 
+#     version: 1.2.10
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.anthem.mobile.aggregation.google
+#     artifact_id: ma-googleapis-war 
+#     version: 1.0.18
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.anthem.mobile.aggregation
+#     artifact_id: ma-authentication-war 
+#     version: 7.0.5
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.anthem.mobile.aggregation
+#     artifact_id: ma-authentication-war 
+#     version: 8.0.3
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.anthem.mobile.aggregation
+#     artifact_id: ma-cm-war 
+#     version: 2.0.15
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.anthem.mobile.aggregation
+#     artifact_id: ma-com-omnichannel-war 
+#     version: 1.1.1
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.anthem.mobile.aggregation
+#     artifact_id: ma-com-pharmacy-war 
+#     version: 1.2.0
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.anthem.mobile.aggregation
+#     artifact_id: ma-member-emulation-war 
+#     version: 2.1.14
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.anthem.mobile.aggregation
+#     artifact_id: ma-memberbenefit-war 
+#     version: 3.8.3
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.anthem.mobile.aggregation
+#     artifact_id: ma-memberclaims-war 
+#     version: 5.2.1
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.anthem.mobile.aggregation
+#     artifact_id: ma-paymybills-war 
+#     version: 2.3.1
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.anthem.mobile.aggregation
+#     artifact_id: ma-preferencecenter-war 
+#     version: 2.2.0
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.anthem.mobile.aggregation
+#     artifact_id: ma-userregistration-war 
+#     version: 1.0.25
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.anthem.mobile.aggregation
+#     artifact_id: ma-userregistration-war 
+#     version: 2.1.1
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.anthem.mobile.aggregation.spending
+#     artifact_id: ma-spending-web-app-war 
+#     version: 3.1.0
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.anthem.mobile.aggregation
+#     artifact_id: transparency-war 
+#     version: 1.6.1
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.wellpoint.mobile.ma
+#     artifact_id: ma-eyc-war
+#     version: 7.1.0
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.wellpoint.mobile.ma
+#     artifact_id: ma-forgotpassword-war 
+#     version: 3.0.18
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.wellpoint.mobile.ma
+#     artifact_id: ma-forgotpassword-war 
+#     version: 4.0.1
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.wellpoint.mobile.ma
+#     artifact_id: ma-idcard-war 
+#     version: 8.3.7
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.wellpoint.mobile.ma
+#     artifact_id: ma-mcc-war 
+#     version: 7.2.2
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.wellpoint.mobile.ma
+#     artifact_id: ma-messagecenter-war 
+#     version: 3.1.8
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.wellpoint.mobile.ma
+#     artifact_id: ma-profileaccountsettings-war 
+#     version: 4.0.60
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+# - maven_artifact:
+#     group_id: com.wellpoint.mobile.ma
+#     artifact_id: ma-providerfinder-war 
+#     version: 4.3.3
+#     extension: war
+#     repository_url: "{{ artifactory_repository_url }}"
+#     username: "{{ my_userid }}"
+#     password: "{{ my_password }}"
+#     dest: "{{ workspace_dir }}/"
+#     validate_certs: no
+#   run_once: true  
+#   delegate_to: localhost
+
+
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com/anthem/mobile/aggregation/app-init-war/1.2.10/app-init-war-1.2.10.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com/anthem/madt/commercial/contents-commercial-rest-war/1.0.0/contents-commercial-rest-war-1.0.0.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com/anthem/madt/commercial/idcards-commercial-rest-war/1.0.3/idcards-commercial-rest-war-1.0.3.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com/anthem/mobile/aggregation/ma-authentication-war/7.0.5/ma-authentication-war-7.0.5.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com/anthem/mobile/aggregation/ma-authentication-war/8.0.3/ma-authentication-war-8.0.3.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com/anthem/mobile/aggregation/ma-cm-war/2.0.15/ma-cm-war-2.0.15.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com/anthem/mobile/aggregation/ma-com-omnichannel-war/1.1.1/ma-com-omnichannel-war-1.1.1.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com/anthem/mobile/aggregation/ma-com-pharmacy-war/1.2.0/ma-com-pharmacy-war-1.2.0.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com.wellpoint.mobile.ma/ma-eyc-war/7.1.0/ma-eyc-war-7.1.0.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com.wellpoint.mobile.ma/ma-forgotpassword-war/3.0.18/ma-forgotpassword-war-3.0.18.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com.wellpoint.mobile.ma/ma-forgotpassword-war/4.0.1/ma-forgotpassword-war-4.0.1.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com/anthem/mobile/aggregation/google/ma-googleapis-war/1.0.18/ma-googleapis-war-1.0.18.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com.wellpoint.mobile.ma/ma-idcard-war/8.3.7/ma-idcard-war-8.3.7.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com.wellpoint.mobile.ma/ma-mcc-war/7.2.2/ma-mcc-war-7.2.2.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com/anthem/mobile/aggregation/ma-memberbenefit-war/3.8.3/ma-memberbenefit-war-3.8.3.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com/anthem/mobile/aggregation/ma-memberclaims-war/5.2.1/ma-memberclaims-war-5.2.1.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com/anthem/mobile/aggregation/ma-member-emulation-war/2.1.14/ma-member-emulation-war-2.1.14.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com.wellpoint.mobile.ma/ma-messagecenter-war/3.1.8/ma-messagecenter-war-3.1.8.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com/anthem/mobile/aggregation/ma-paymybills-war/2.3.1/ma-paymybills-war-2.3.1.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com/anthem/mobile/aggregation/ma-preferencecenter-war/2.2.0/ma-preferencecenter-war-2.2.0.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com.wellpoint.mobile.ma/ma-profileaccountsettings-war/4.0.60/ma-profileaccountsettings-war-4.0.60.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com.wellpoint.mobile.ma/ma-providerfinder-war/4.3.3/ma-providerfinder-war-4.3.3.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com/anthem/mobile/aggregation/spending/ma-spending-web-app-war/3.1.0/ma-spending-web-app-war-3.1.0.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com/anthem/mobile/aggregation/ma-userregistration-war/1.0.25/ma-userregistration-war-1.0.25.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com/anthem/mobile/aggregation/ma-userregistration-war/2.1.1/ma-userregistration-war-2.1.1.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com/anthem/madt/commercial/preference-center-commercial-rest-war/0.0.4/preference-center-commercial-rest-war-0.0.4.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com/anthem/mobile/aggregation/transparency-war/1.6.1/transparency-war-1.6.1.war
+# https://artifactory.anthem.com:443/artifactory/maven-releases/com/anthem/madt/commercial/voyager-commercial-rest-war/1.1.0/voyager-commercial-rest-war-1.1.0.war
+
+# app-init-war-1.2.10.war
+# contents-commercial-rest-war-1.0.0.war
+# idcards-commercial-rest-war-1.0.3.war
+# ma-authentication-war-7.0.5.war
+# ma-authentication-war-8.0.3.war
+# ma-cm-war-2.0.15.war
+# ma-com-omnichannel-war-1.1.1.war
+# ma-com-pharmacy-war-1.2.0.war
+# ma-eyc-war-7.1.0.war
+# ma-forgotpassword-war-3.0.18.war
+# ma-forgotpassword-war-4.0.1.war
+# ma-googleapis-war-1.0.18.war
+# ma-idcard-war-8.3.7.war
+# ma-mcc-war-7.2.2.war
+# ma-memberbenefit-war-3.8.3.war
+# ma-memberclaims-war-5.2.1.war
+# ma-member-emulation-war-2.1.14.war
+# ma-messagecenter-war-3.1.8.war
+# ma-paymybills-war-2.3.1.war
+# ma-preferencecenter-war-2.2.0.war
+# ma-profileaccountsettings-war-4.0.60.war
+# ma-providerfinder-war-4.3.3.war
+# ma-spending-web-app-war-3.1.0.war
+# ma-userregistration-war-1.0.25.war
+# ma-userregistration-war-2.1.1.war
+# preference-center-commercial-rest-war-0.0.4.war
+# transparency-war-1.6.1.war
+# voyager-commercial-rest-war-1.1.0.war
+
+
+
+
+
+
+
