@@ -1,123 +1,281 @@
-- setup:
-  register: my_setup
-- debug:
-    msg: "{{ my_setup }}"  
+# - setup:
+#   register: my_setup
+# - debug:
+#     msg: "{{ my_setup }}"
+
+
+# --- first --- WORKS
+
+- name: Find all files
+  find:
+    path: "{{ my_folder }}"
+  register: list_of_files
+
+- name: set_fact - basename all files  
+  set_fact:
+    files: "{{ list_of_files.files|
+               json_query('[].path')|
+               map('basename')|
+               list }}"               
+
+- name: stat files from set_fact
+  stat:
+    path: "{{ my_folder }}/{{ item }}"
+  loop: "{{ files }}"
+  register: status_of_files
+
+# --- second --- WORKS
+
+- name: set_fact for master_list
+  set_fact:
+    master_list: "{{ hostvars[master].status_of_files.results|
+                     json_query('[].{item: item, hash: stat.checksum}') }}"
+
+- name: debug - set_fact for master_list                     
+  debug:
+    msg: "{{ master_list|
+             symmetric_difference(hostvars[item_host].status_of_files.results|
+             json_query('[].{item: item, hash: stat.checksum}')) }}"
+  loop: "{{ groups['FS-AA-PERF-WAS'] | difference([ master ]) }}"
+  loop_control:
+    loop_var: item_host            
+
+#################################################################################
 
 # Determine if a path exists and is a directory.  Note that we need to test
 # both that p.stat.isdir actually exists, and also that it's set to true.
 - name: Recursively find /usr/WebSphere/wlp/usr/servers war files
   find:
-    paths: /usr/WebSphere/wlp/usr/servers
-    patterns: "*.war,*.war.txt"
+    paths: "{{ was_server_path }}"
+    patterns: "*.war"
     get_checksum: yes
     recurse: yes
-    excludes: '*.log'
-  register: find_wars
-  
+    excludes: '*.log,*.txt'
+  register: find_wars1
+  # delegate_to: va33tlvwbs330
+
+- name: item.0 returns from the first list, item.1 returns from the second list
+  debug:
+    msg: "{{ item.0 }} and {{ item.1 }}"
+  with_together:
+    - "{{ find_wars1.files | json_query('[].path[]') | list }}"
+    - "{{ find_wars1.files | json_query('[].checksum[]') | list }}" 
+
+- name: Ansible create file if it doesn't exist example
+  file:
+    path: "{{ workspace_dir }}/output.csv"
+    state: touch
+    mode: 0777
+  delegate_to: localhost 
+
+- shell: 
+    echo "hostname,path,sha1sum" > "{{ workspace_dir }}/output.csv"
+  delegate_to: localhost         
+
+- shell:
+    echo "{{ ansible_hostname }},{{ item.0 }},{{ item.1 }}" >> "{{ workspace_dir }}/output.csv"
+    # echo "{{ ansible_hostname }}\n{{ host_features2 | regex_replace(', ', '\n') }}" >> "{{ workspace_dir }}/output1.txt"
+  with_together:
+    - "{{ find_wars1.files | json_query('[].path[]') | list }}"
+    - "{{ find_wars1.files | json_query('[].checksum[]') | list }}"  
+  delegate_to: localhost
+  register: shell_echo
 - debug:
     msg: 
-      - "{{ find_wars.files | json_query('[].path[]') | list }}"
-      - "{{ find_wars.files | json_query('[].checksum[]') | list }}"
-      # - "{{ find_wars.files | json_query('[].checksum[]') | list }}"
+      - "{{ shell_echo.results| map(attribute='_ansible_item_label') | list }}"       
 
-# - name: Ansible create file if it doesn't exist example
-#   file:
-#     path: "{{ workspace_dir }}/output.txt"
-#     state: touch
-#     mode: 0777
-#   delegate_to: localhost       
+# # ...........................................
 
-- name: "loop through list from a variable"
-  debug:
-    msg: "{{item}}"
-  with_items: "{{ find_wars.files | json_query('[].path[]') | list }}"
+# - name: first file check
+#   stat:
+#     path: "{{ perf1_api }}/apps/ma-userfeedback-war.war"
+#     get_checksum: yes
+#   register: test_file_check_1
+#   delegate_to: va33tlvwbs330    
 
-- name: get the remote-features1
-  set_fact:
-     host_features1: "{{ find_wars.files | json_query('[].path[]') | list }}" 
+# # ...........................................
 
-- name: get the remote-features2
-  set_fact:
-     host_features2: "{{ find_wars.files | json_query('[].checksum[]') | list }}"
+# - name: next check
+#   stat:
+#     path: "{{ perf2_api }}/apps/ma-userfeedback-war.war"
+#     get_checksum: yes
+#   register: test_file_check_2
+#   delegate_to: va33tlvwbs331
+# # ...........................................
+
+# - name: Block run only if file has no changes
+#   command: /bin/true
+#   when: test_file_check_1.stat.checksum == test_file_check_2.stat.checksum
+#   register: block_run
+
+# - debug:
+#     msg: 
+#       - "{{ block_run }}" 
+
+# - name: "find  {{perf1_api_apps}} stuff"
+#   shell: find "{{perf1_api_apps}}" -maxdepth 1 -type f 2>/dev/null -exec md5sum {} + | sort -k 2
+#   register: shell_echo1
+#   delegate_to: va33tlvwbs330
+# - debug:
+#     msg: 
+#       - "{{ shell_echo1.stdout_lines }}"
+
+# - name: "find  {{perf2_api_apps}} stuff"
+#   shell: find "{{perf2_api_apps}}" -maxdepth 1 -type f 2>/dev/null -exec md5sum {} + | sort -k 2
+# #find "{{perf1_api_apps}}" -maxdepth 1 -type f 2>/dev/null -exec md5sum {} \;
+#   register: shell_echo2
+#   delegate_to: va33tlvwbs331
+# - debug:
+#     msg: 
+#       - "{{ shell_echo2.stdout_lines }}"                   
+
+# # find  {{ perf1_api }}/apps  -type f   2>/dev/null  -exec md5sum {} \; >list1.txt 
+
+# - shell: 
+#     echo "{{ ansible_hostname }}\n{{ shell_echo1.stdout_lines | regex_replace(', ', '\n') }}" >> "{{ workspace_dir }}/va33tlvwbs330.txt"
+#   delegate_to: localhost
+#   register: shell_echo11
+# - debug:
+#     msg: 
+#       - "{{ shell_echo11 }}" 
+
+# - shell: 
+#     echo "{{ ansible_hostname }}\n{{ shell_echo2.stdout_lines | regex_replace(', ', '\n') }}" >> "{{ workspace_dir }}/va33tlvwbs331.txt"
+#   delegate_to: localhost
+#   register: shell_echo22
+# - debug:
+#     msg: 
+#       - "{{ shell_echo22 }}"  
+
+#  # diff -y -W 70 colors1.txt colors2.txt
+
+# # - name: "diff stuff"
+# #   shell: diff -y -W 70 "{{ shell_echo1.stdout_lines }}" "{{ shell_echo2.stdout_lines }}"
+# #   # eqdelegate_to: localhost
+# #   register: diff_output1
+# # - debug:
+# #     msg: 
+# #       - "{{ diff_output1 }}" 
+
+# ##### --------------
+# - stat:
+#     path: "{{ item }}"
+#     checksum_algorithm: sha1
+#   # delegate_to: va33tlvwbs331
+#   with_fileglob: /usr/WebSphere/wlp/usr/servers/perf1_api/apps/*.war
+#   register: mywar_files
+# ##### -------------- 
+# - stat:
+#     path: "{{ item.stat.path | basename }}"
+#     checksum_algorithm: sha1
+#   failed_when: remote_files.stat.checksum != item.stat.checksum
+#   # failed_when condition checked after every iteration
+#   #   and remote_files here is a result of individual task
+#   #   but after loop is finished, remote_files is a cobination
+#   #   of all iterations results
+#   with_items: "{{ mywar_files.results }}"
+#   register: remote_files
+#   loop_control:
+#     label: "{{ item.stat.path | basename }}"
+
+# # - name: Ansible create file if it doesn't exist example
+# #   file:
+# #     path: "{{ workspace_dir }}/output.txt"
+# #     state: touch
+# #     mode: 0777
+# #   delegate_to: localhost       
+
+# - name: "loop through list from a variable"
+#   debug:
+#     msg: "{{item}}"
+#   with_items: "{{ find_wars.files | json_query('[].path[]') | list }}"
+
+# - name: get the remote-features1
+#   set_fact:
+#      host_features1: "{{ find_wars.files | json_query('[].path[]') | list }}" 
+
+# - name: get the remote-features2
+#   set_fact:
+#      host_features2: "{{ find_wars.files | json_query('[].checksum[]') | list }}"
 
    
 
 
-- name: "debug2"   
-  debug:
-    msg: "value is: {{ lookup('vars', item) }} "   
-  loop: "{{ hostvars[inventory_hostname] | select('match', '^linux_hosts_entries') |list  }}"
+# - name: "debug2"   
+#   debug:
+#     msg: "value is: {{ lookup('vars', item) }} "   
+#   loop: "{{ hostvars[inventory_hostname] | select('match', '^linux_hosts_entries') |list  }}"
 
 
-- shell: 
-    echo "{{ ansible_hostname }}\n{{ host_features1 | regex_replace(', ', '\n') }}" >> "{{ workspace_dir }}/output1.txt"
-    #echo "{{ ansible_hostname }}\n{{ host_features2 | regex_replace(', ', '\n') }}" >> "{{ workspace_dir }}/output1.txt" 
-  delegate_to: localhost
-  register: shell_echo1
-- debug:
-    msg: 
-      - "{{ shell_echo1 }}"
+# - shell: 
+#     echo "{{ ansible_hostname }}\n{{ host_features1 | regex_replace(', ', '\n') }}" >> "{{ workspace_dir }}/output1.txt"
+#     #echo "{{ ansible_hostname }}\n{{ host_features2 | regex_replace(', ', '\n') }}" >> "{{ workspace_dir }}/output1.txt" 
+#   delegate_to: localhost
+#   register: shell_echo1
+# - debug:
+#     msg: 
+#       - "{{ shell_echo1 }}"
 
-# {{ host_features1 | union(host_features2) }}   
+# # {{ host_features1 | union(host_features2) }}   
 
-- xml:
-    path: /Users/ag19884/tmp/application.xml
-    xpath: webApplication
-    content: attribute
-  register: instance_attributes
-  delegate_to: localhost 
+# - xml:
+#     path: /Users/ag19884/tmp/application.xml
+#     xpath: webApplication
+#     content: attribute
+#   register: instance_attributes
+#   delegate_to: localhost 
 
-- name: Match 29 wars
-  debug:
-    msg: 
-      # - "{{ instance_attributes.matches() | [regex_findall('[0-9]')] }}"
-      - "{{ instance_attributes.matches.28 }}"
-      # - "{{ instance_attributes.matches.2 }}"
-      # - "{{ instance_attributes.matches.3 }}"
-      # - "{{ instance_attributes.matches.4 }}"
-      # - "{{ instance_attributes.matches.5 }}"
-      # - "{{ instance_attributes.matches.6 }}"
-      # - "{{ instance_attributes.matches.7 }}"
-      # - "{{ instance_attributes.matches.8 }}"
-      # - "{{ instance_attributes.matches.9 }}"
-      # - "{{ instance_attributes.matches.10 }}"
-      # - "{{ instance_attributes.matches.11 }}"
-      # - "{{ instance_attributes.matches.12 }}"
-      # - "{{ instance_attributes.matches.13 }}"
-      # - "{{ instance_attributes.matches.14 }}"
-      # - "{{ instance_attributes.matches.15 }}"
-      # - "{{ instance_attributes.matches.16 }}"
-      # - "{{ instance_attributes.matches.17 }}"
-      # - "{{ instance_attributes.matches.18 }}"
-      # - "{{ instance_attributes.matches.19 }}"
-      # - "{{ instance_attributes.matches.20 }}"
-      # - "{{ instance_attributes.matches.21 }}"
-      # - "{{ instance_attributes.matches.22 }}"
-      # - "{{ instance_attributes.matches.23 }}"
-      # - "{{ instance_attributes.matches.24 }}"
-      # - "{{ instance_attributes.matches.25 }}"
-      # - "{{ instance_attributes.matches.26 }}"
-      # - "{{ instance_attributes.matches.27 }}"
-      # - "{{ instance_attributes.matches.28 }}"
+# - name: Match 29 wars
+#   debug:
+#     msg: 
+#       # - "{{ instance_attributes.matches() | [regex_findall('[0-9]')] }}"
+#       - "{{ instance_attributes.matches.28 }}"
+#       # - "{{ instance_attributes.matches.2 }}"
+#       # - "{{ instance_attributes.matches.3 }}"
+#       # - "{{ instance_attributes.matches.4 }}"
+#       # - "{{ instance_attributes.matches.5 }}"
+#       # - "{{ instance_attributes.matches.6 }}"
+#       # - "{{ instance_attributes.matches.7 }}"
+#       # - "{{ instance_attributes.matches.8 }}"
+#       # - "{{ instance_attributes.matches.9 }}"
+#       # - "{{ instance_attributes.matches.10 }}"
+#       # - "{{ instance_attributes.matches.11 }}"
+#       # - "{{ instance_attributes.matches.12 }}"
+#       # - "{{ instance_attributes.matches.13 }}"
+#       # - "{{ instance_attributes.matches.14 }}"
+#       # - "{{ instance_attributes.matches.15 }}"
+#       # - "{{ instance_attributes.matches.16 }}"
+#       # - "{{ instance_attributes.matches.17 }}"
+#       # - "{{ instance_attributes.matches.18 }}"
+#       # - "{{ instance_attributes.matches.19 }}"
+#       # - "{{ instance_attributes.matches.20 }}"
+#       # - "{{ instance_attributes.matches.21 }}"
+#       # - "{{ instance_attributes.matches.22 }}"
+#       # - "{{ instance_attributes.matches.23 }}"
+#       # - "{{ instance_attributes.matches.24 }}"
+#       # - "{{ instance_attributes.matches.25 }}"
+#       # - "{{ instance_attributes.matches.26 }}"
+#       # - "{{ instance_attributes.matches.27 }}"
+#       # - "{{ instance_attributes.matches.28 }}"
   
 
-- name: Read attribute value
-  xml:
-    path: /Users/ag19884/tmp/application.xml
-    xpath: webApplication
-    content: attribute
-    attribute: location
-  register: xmlresp
-  delegate_to: localhost  
+# - name: Read attribute value
+#   xml:
+#     path: /Users/ag19884/tmp/application.xml
+#     xpath: webApplication
+#     content: attribute
+#     attribute: location
+#   register: xmlresp
+#   delegate_to: localhost  
 
-- name: DEBUG var xmlresp
-  debug:
-    var: xmlresp
+# - name: DEBUG var xmlresp
+#   debug:
+#     var: xmlresp
 
-- name: DEBUG No list and list
-  debug:
-    msg: 
-      - "{{ xmlresp.matches | map(attribute='webApplication.location') | list |  regex_replace('ma-messagecenter-war.war', 'ma-messagecenter-war.xxx.war') }}"
+# - name: DEBUG No list and list
+#   debug:
+#     msg: 
+#       - "{{ xmlresp.matches | map(attribute='webApplication.location') | list |  regex_replace('ma-messagecenter-war.war', 'ma-messagecenter-war.xxx.war') }}"
 
 
 

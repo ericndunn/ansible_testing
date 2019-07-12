@@ -8,7 +8,7 @@
     owner: "{{ owner_name }}"
     group: "{{ group_name }}"
     state: enabled
-    jenkins_home: "/Users/{{ owner_name }}/.jenkins"
+    jenkins_home: "{{ jenkins_home }}"
   with_items: "{{ jenkins_plugins }}"     
   register: enable_plugin
 

@@ -106,7 +106,7 @@
       - "{{ get_url_results.results | map(attribute='md5sum') | list }}"
   run_once: true    
 
-- name: "List WAS Artifact basename from URL"
+- name: "List WAS Artifact from URL"
   debug:
     msg: "{{ list_wars }}"
   run_once: true          
@@ -152,30 +152,13 @@
   debug:
     msg: "The directory /tmp/MADT exists"
   when: madt_dir.stat.isdir is defined and madt_dir.stat.isdir
-  run_once: true
-
-# - name: "Remove /tmp/MADT"
-#   file:
-#     state: "{{ item }}"
-#     path: "/tmp/MADT"
-#     group: mobist
-#     mode: '0775'
-#   with_items:
-#     - absent
-#     - directory
-#   when: madt_dir.stat.isdir is defined and madt_dir.stat.isdir
-#   register: remove_madt 
-
-# - name: "DEBUG: Remove /tmp/MADT"
-#   debug:
-#     msg: "{{ remove_madt.results | map(attribute='diff') | list }}" 
-#   run_once: true      
+  run_once: true    
 
 - name: "Creates directory {{ deploy_war_dir }}"
   file:
     path: "{{ deploy_war_dir }}"
     state: directory
-    group: mobist
+    group: users
     mode: 0775
   register: create_madt_dir
 
@@ -187,24 +170,31 @@
   copy:
     src: "{{ item }}"
     dest: "{{ deploy_war_dir }}"
-    group: mobist
+    group: users
     mode: 0775
   with_fileglob:
   - "{{ build_tag_dir }}/*.war"
   - "{{ build_tag_dir }}/*.txt"
   register: put_war_release
 
-- name: "DEBUG: Copy War and War-Versioning Files from {{ workspace_dir }}"  
-  debug:
-    msg: 
-      - "{{ put_war_release.results | map(attribute='item') | list }}"
-  run_once: true    
+# - name: "DEBUG: Copy War and War-Versioning Files from {{ workspace_dir }}"  
+#   debug:
+#     msg: 
+#       - "{{ put_war_release.results | map(attribute='item') | list }}"
+#   run_once: true    
 
-- name: "DEBUG: Copy War and War-Versioning Files to {{ deploy_war_dir }}"  
+# - name: "DEBUG: Copy War and War-Versioning Files to {{ deploy_war_dir }}"  
+#   debug:
+#     msg: 
+#       - "{{ put_war_release.results | map(attribute='dest') | list }}"
+#   run_once: true 
+
+- name: dest from the first list, item returns from the second list
   debug:
-    msg: 
-      - "{{ put_war_release.results | map(attribute='dest') | list }}"
-  run_once: true 
+    msg: "{{ item.0 }} : {{ item.1 }}"
+  with_together:
+    - "{{ put_war_release.results | map(attribute='dest') | list }}"
+    - "{{ put_war_release.results | map(attribute='item') | list }}"   
 
 - name: "Register local checksums"
   stat:

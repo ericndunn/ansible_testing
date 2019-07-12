@@ -1,8 +1,9 @@
 ---
 # vars file for jenkins
 ansible_connection: local
-my_jenkins_user: "{{ my_jenkins_user }}"
-my_jenkins_pass: "{{ my_jenkins_pass }}"
+jenkins_home: /var/jenkins_home
+my_jenkins_user: ""
+my_jenkins_pass: ""
 owner_name: "{{ ansible_user_id }}"
 group_name: staff
 jenkins_plugins:

@@ -3,8 +3,8 @@
 - include_tasks: install_jenkins_plugins.yml
   when: ansible_os_family == "Darwin"
 
-- include_tasks: enable_jenkins_plugins.yml
-  when: ansible_os_family == "Darwin"
+# - include_tasks: enable_jenkins_plugins.yml
+#   when: ansible_os_family == "Darwin"
 
 # - include_tasks: restart_jenkins.yml
 #   when: ansible_os_family == "Darwin" 
