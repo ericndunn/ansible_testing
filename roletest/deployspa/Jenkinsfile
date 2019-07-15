@@ -28,7 +28,7 @@ pipeline {
             //             description: 'War Files', 
             //             name: 'WAR_FILES')
             // string(defaultValue: '8.0.308', description: 'IHS Version', name: 'IHS_VERSION')
-            string(defaultValue: 'ag19884', description: 'Artifictory User ID', name: 'MY_USERID')
+            string(defaultValue: '${user.name}', description: 'Artifictory User ID', name: 'MY_USERID')
             password(defaultValue: '', description: 'Artifactory Password', name: 'MY_PASSWORD')
 //             text(name: 'MY_FILE_LIST', 
 //                 defaultValue: '''https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui/${UI_ENV}/${IHS_VERSION}/ABC-${IHS_VERSION}.tar.gz
