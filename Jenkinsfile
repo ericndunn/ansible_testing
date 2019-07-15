@@ -77,7 +77,7 @@ pipeline {
                     installation: 'ansible', 
                     inventory: '/Users/ag19884/${INV_FILE}',
                     limit: '${INV_GRP}',
-                    playbook: '${WORKSPACE}/ansible_testing/roletest/server_access_status.yml',
+                    playbook: '${WORKSPACE}/roletest/server_access_status.yml',
                     colorized: true
                 }
             }
