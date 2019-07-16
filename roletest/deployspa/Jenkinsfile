@@ -28,7 +28,7 @@ pipeline {
             //             description: 'War Files', 
             //             name: 'WAR_FILES')
             // string(defaultValue: '8.0.308', description: 'IHS Version', name: 'IHS_VERSION')
-            string(defaultValue: '${env.user.name}', description: 'Artifictory User ID', name: 'MY_USERID')
+            string(defaultValue: 'YOUR_USER_ID', description: 'Artifictory User ID', name: 'MY_USERID')
             password(defaultValue: '', description: 'Artifactory Password', name: 'MY_PASSWORD')
 //             text(name: 'MY_FILE_LIST', 
 //                 defaultValue: '''https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/ui/${UI_ENV}/${IHS_VERSION}/ABC-${IHS_VERSION}.tar.gz
@@ -49,7 +49,7 @@ pipeline {
                     ansiblePlaybook credentialsId: '62c93b86-c4ba-483c-a696-8180694ce559',
                     installation: 'ansible', 
                     inventory: '${env.user.home}/${env.INV_FILE}',
-                    limit: '${INV_GRP}',
+                    limit: '${env.INV_GRP}',
                     playbook: '${env.WORKSPACE}/roletest/deploy_webapp.yml',
                     colorized: true
                 }
