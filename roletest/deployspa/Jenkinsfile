@@ -50,7 +50,7 @@ pipeline {
                     installation: 'ansible', 
                         inventory: '/Users/${MY_USERID}/${INV_FILE}',
                     limit: '${INV_GRP}',
-                    playbook: '../roletest/deploy_webapp.yml',
+                        playbook: '${WORKSPACE}/roletest/deploy_webapp.yml',
                     colorized: true
                 }
             }
