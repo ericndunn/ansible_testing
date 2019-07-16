@@ -37,11 +37,11 @@ pipeline {
 //                 description: 'List all linked Artifacts - EXAMPLE - https://artifactory.anthem.com/artifactory/maven-releases/com/anthem/madt/commercial/contents-commercial-rest-war/1.0.0/contents-commercial-rest-war-1.0.0.war ')           
     }
     stages {
-        stage('Cleanup Jenkins Job Workspace'){
-            steps {
-                step([$class: 'WsCleanup'])
-            }
-        }       
+        //stage('Cleanup Jenkins Job Workspace'){
+            //steps {
+                //step([$class: 'WsCleanup'])
+            //}
+        //}       
         stage('Run Ansible Deploy operation'){        
             steps {            
             wrap([$class: 'AnsiColorBuildWrapper', colorMapName: "xterm"]) {
